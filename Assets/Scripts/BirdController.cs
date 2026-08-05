@@ -4,207 +4,555 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Rigidbody2D))]
+[RequireComponent(typeof(Animator))]
 public sealed class BirdController : MonoBehaviour
 {
+    private enum FlightState
+    {
+        Waiting,
+        Rising,
+        Hovering,
+        Descending,
+        Diving,
+        Recovering,
+        Stopped
+    }
+
     [Header("Input")]
-    [SerializeField] private InputActionReference flapAction;
+    [SerializeField]
+    private InputActionReference primaryContactAction;
 
-    [Header("Movement")]
-    [SerializeField] private float flapVelocity = 7.5f;
-    [SerializeField] private float maximumFallSpeed = 10f;
+    [SerializeField]
+    private InputActionReference pointerPositionAction;
 
-    [Header("Playable Area")]
-    [SerializeField] private float minimumY = -5.5f;
-    [SerializeField] private float maximumY = 5.5f;
+    [SerializeField]
+    private InputActionReference keyboardFlapAction;
+
+    [Header("Single Tap")]
+    [SerializeField] private float flapVelocity = 5.2f;
+    [SerializeField] private float singleHoverDuration = 0.2f;
+
+    [Header("Double Tap")]
+    [SerializeField] private float doubleTapWindow = 0.28f;
+    [SerializeField] private float burstVelocity = 7.8f;
+    [SerializeField] private float burstHoverDuration = 0.5f;
+
+    [Header("Rise")]
+    [SerializeField] private float riseDeceleration = 8f;
+    [SerializeField] private float maximumRiseSpeed = 8.5f;
+
+    [Header("Altitude")]
+    [SerializeField] private float minimumY = -4.8f;
+    [SerializeField] private float maximumY = 4.8f;
+
+    [Header("High Altitude Descent")]
+    [SerializeField] private float highDescentAcceleration = 1.1f;
+    [SerializeField] private float highMaximumFallSpeed = 2.2f;
+    [SerializeField] private float highHoverBonus = 0.15f;
+
+    [Header("Middle Altitude Descent")]
+    [SerializeField] private float middleDescentAcceleration = 2.2f;
+    [SerializeField] private float middleMaximumFallSpeed = 4.2f;
+    [SerializeField] private float middleHoverBonus = 0.05f;
+
+    [Header("Low Altitude Descent")]
+    [SerializeField] private float lowDescentAcceleration = 3.8f;
+    [SerializeField] private float lowMaximumFallSpeed = 7f;
+
+    [Header("Downward Swipe")]
+    [SerializeField] private float minimumSwipeDistancePixels = 80f;
+    [SerializeField] private float maximumSwipeDuration = 0.45f;
+    [SerializeField] private float diveRowHeight = 1f;
+    [SerializeField] private float diveSpeed = 9f;
+
+    [Header("Animation Speeds")]
+    [SerializeField] private float hoverAnimationSpeed = 1f;
+    [SerializeField] private float flapAnimationSpeed = 1.2f;
+    [SerializeField] private float burstAnimationSpeed = 1.5f;
+    [SerializeField] private float descentAnimationSpeed = 0.8f;
 
     [Header("Rotation")]
-    [SerializeField] private bool rotateBird = true;
-    [SerializeField] private float upwardRotation = 25f;
-    [SerializeField] private float downwardRotation = -60f;
-    [SerializeField] private float rotationSpeed = 8f;
+    [SerializeField] private float risingAngle = 18f;
+    [SerializeField] private float hoverAngle = 0f;
+    [SerializeField] private float descendingAngle = -22f;
+    [SerializeField] private float diveAngle = -60f;
+    [SerializeField] private float rotationSpeed = 10f;
+    
+    [Header("Dive Recovery")]
+    [SerializeField] private float recoveryDuration = 0.15f;
 
-    private readonly List<RaycastResult> uiRaycastResults = new();
+    private static readonly int FlightSpeedId =
+        Animator.StringToHash("FlightSpeed");
+
+    private static readonly int IsDivingId =
+        Animator.StringToHash("IsDiving");
+
+    private static readonly int RecoverId =
+        Animator.StringToHash("Recover");
+
+    private readonly List<RaycastResult> uiResults = new();
 
     private Rigidbody2D body;
-    private bool inputEnabled;
+    private Animator animator;
+
+    private FlightState currentState = FlightState.Waiting;
+
+    private bool gameplayInputEnabled;
+    private bool pointerGestureActive;
+
+    private Vector2 pointerStartPosition;
+    private float pointerStartTime;
+    private float previousTapTime = float.NegativeInfinity;
+
+    private float hoverTimer;
+    private float diveTargetY;
+    private float recoveryTimer;
 
     private void Awake()
     {
         body = GetComponent<Rigidbody2D>();
+        animator = GetComponent<Animator>();
 
-        inputEnabled = false;
+        body.gravityScale = 0f;
         body.simulated = false;
+
+        animator.SetFloat(FlightSpeedId, hoverAnimationSpeed);
+        animator.SetBool(IsDivingId, false);
     }
 
     private void OnEnable()
     {
-        if (flapAction == null || flapAction.action == null)
-        {
-            Debug.LogError(
-                "BirdController requires a Flap InputActionReference.",
-                this
-            );
-
-            return;
-        }
-
-        flapAction.action.performed += OnFlapPerformed;
+        SubscribeToInput();
     }
 
     private void OnDisable()
     {
-        if (flapAction == null || flapAction.action == null)
-        {
-            return;
-        }
-
-        flapAction.action.performed -= OnFlapPerformed;
-        flapAction.action.Disable();
-    }
-
-    private void Update()
-    {
-        if (!inputEnabled)
-        {
-            return;
-        }
-
-        if (GameManager.Instance == null || !GameManager.Instance.IsPlaying)
-        {
-            return;
-        }
-
-        CheckVerticalLimits();
-        UpdateBirdRotation();
+        UnsubscribeFromInput();
+        DisableInputActions();
     }
 
     private void FixedUpdate()
     {
-        if (!body.simulated)
+        if (!gameplayInputEnabled || !body.simulated)
         {
             return;
         }
 
-        Vector2 velocity = GetVelocity();
-
-        if (velocity.y >= -maximumFallSpeed)
+        switch (currentState)
         {
-            return;
+            case FlightState.Rising:
+                UpdateRising();
+                break;
+
+            case FlightState.Hovering:
+                UpdateHovering();
+                break;
+
+            case FlightState.Descending:
+                UpdateDescending();
+                break;
+
+            case FlightState.Diving:
+                UpdateDiving();
+                break;
+
+            case FlightState.Recovering:
+                UpdateRecovering();
+                break;
         }
 
-        velocity.y = -maximumFallSpeed;
-        SetVelocity(velocity);
+        ClampRiseSpeed();
+        CheckVerticalLimits();
+        UpdateRotation();
     }
 
     public void BeginGame()
     {
-        inputEnabled = true;
+        gameplayInputEnabled = true;
         body.simulated = true;
 
         SetVelocity(Vector2.zero);
-
-        if (flapAction != null && flapAction.action != null)
-        {
-            flapAction.action.Enable();
-        }
+        EnableInputActions();
+        EnterHover(0.15f);
     }
 
     public void PauseInput()
     {
-        if (flapAction != null && flapAction.action != null)
-        {
-            flapAction.action.Disable();
-        }
+        DisableInputActions();
     }
 
     public void ResumeInput()
     {
-        if (!inputEnabled)
+        if (!gameplayInputEnabled)
         {
             return;
         }
 
-        if (flapAction != null && flapAction.action != null)
-        {
-            flapAction.action.Enable();
-        }
+        EnableInputActions();
     }
 
     public void StopBird()
     {
-        inputEnabled = false;
+        gameplayInputEnabled = false;
+        pointerGestureActive = false;
 
-        if (flapAction != null && flapAction.action != null)
-        {
-            flapAction.action.Disable();
-        }
+        DisableInputActions();
 
         SetVelocity(Vector2.zero);
         body.simulated = false;
+
+        currentState = FlightState.Stopped;
     }
 
-    private void OnFlapPerformed(
+    private void SubscribeToInput()
+    {
+        if (primaryContactAction?.action != null)
+        {
+            primaryContactAction.action.started += OnPointerPressed;
+            primaryContactAction.action.canceled += OnPointerReleased;
+        }
+
+        if (keyboardFlapAction?.action != null)
+        {
+            keyboardFlapAction.action.performed += OnKeyboardFlap;
+        }
+    }
+
+    private void UnsubscribeFromInput()
+    {
+        if (primaryContactAction?.action != null)
+        {
+            primaryContactAction.action.started -= OnPointerPressed;
+            primaryContactAction.action.canceled -= OnPointerReleased;
+        }
+
+        if (keyboardFlapAction?.action != null)
+        {
+            keyboardFlapAction.action.performed -= OnKeyboardFlap;
+        }
+    }
+
+    private void EnableInputActions()
+    {
+        primaryContactAction?.action?.Enable();
+        pointerPositionAction?.action?.Enable();
+        keyboardFlapAction?.action?.Enable();
+    }
+
+    private void DisableInputActions()
+    {
+        primaryContactAction?.action?.Disable();
+        pointerPositionAction?.action?.Disable();
+        keyboardFlapAction?.action?.Disable();
+    }
+
+    private void OnPointerPressed(
         InputAction.CallbackContext context
     )
     {
-        if (!inputEnabled)
+        // Discard any stale gesture left by an interrupted click.
+        pointerGestureActive = false;
+
+        if (!CanAcceptInput())
         {
             return;
         }
 
-        if (GameManager.Instance == null || !GameManager.Instance.IsPlaying)
+        Vector2 pointerPosition = ReadPointerPosition();
+
+        if (IsPointerOverUI(pointerPosition))
         {
             return;
         }
 
-        // Do not flap when the player presses a UI button.
-        if (IsPointerOverUI(context))
-        {
-            return;
-        }
-
-        Flap();
+        pointerGestureActive = true;
+        pointerStartPosition = pointerPosition;
+        pointerStartTime = Time.unscaledTime;
     }
 
-    private void Flap()
+    private void OnPointerReleased(InputAction.CallbackContext context)
+    {
+        if (!pointerGestureActive)
+        {
+            return;
+        }
+
+        pointerGestureActive = false;
+
+        if (!CanAcceptInput())
+        {
+            return;
+        }
+
+        Vector2 endPosition = ReadPointerPosition();
+        Vector2 delta = endPosition - pointerStartPosition;
+
+        float duration = Time.unscaledTime - pointerStartTime;
+
+        bool isDownwardSwipe =
+            duration <= maximumSwipeDuration &&
+            delta.y <= -minimumSwipeDistancePixels &&
+            Mathf.Abs(delta.y) > Mathf.Abs(delta.x);
+
+        if (isDownwardSwipe)
+        {
+            BeginDive();
+            return;
+        }
+
+        ProcessTap();
+    }
+
+    private void OnKeyboardFlap(InputAction.CallbackContext context)
+    {
+        if (CanAcceptInput())
+        {
+            ProcessTap();
+        }
+    }
+
+    private void ProcessTap()
+    {
+        float now = Time.unscaledTime;
+        float interval = now - previousTapTime;
+
+        bool isDoubleTap =
+            interval > 0f &&
+            interval <= doubleTapWindow;
+
+        previousTapTime = now;
+
+        if (isDoubleTap)
+        {
+            previousTapTime = float.NegativeInfinity;
+            BeginBurst();
+            return;
+        }
+
+        BeginSingleFlap();
+    }
+
+    private void BeginSingleFlap()
+    {
+        currentState = FlightState.Rising;
+
+        animator.SetBool(IsDivingId, false);
+        animator.SetFloat(FlightSpeedId, flapAnimationSpeed);
+
+        Vector2 velocity = GetVelocity();
+        velocity.y = Mathf.Max(velocity.y, flapVelocity);
+        SetVelocity(velocity);
+
+        hoverTimer =
+            singleHoverDuration +
+            GetAltitudeHoverBonus();
+    }
+
+    private void BeginBurst()
+    {
+        currentState = FlightState.Rising;
+
+        animator.SetBool(IsDivingId, false);
+        animator.SetFloat(FlightSpeedId, burstAnimationSpeed);
+
+        Vector2 velocity = GetVelocity();
+        velocity.y = burstVelocity;
+        SetVelocity(velocity);
+
+        hoverTimer =
+            burstHoverDuration +
+            GetAltitudeHoverBonus();
+    }
+
+    private void UpdateRising()
     {
         Vector2 velocity = GetVelocity();
 
-        // Replace downward velocity instead of accumulating force.
-        velocity.y = flapVelocity;
+        velocity.y = Mathf.MoveTowards(
+            velocity.y,
+            0f,
+            riseDeceleration * Time.fixedDeltaTime
+        );
+
+        SetVelocity(velocity);
+
+        if (velocity.y <= 0.05f)
+        {
+            EnterHover(hoverTimer);
+        }
+    }
+
+    private void EnterHover(float duration)
+    {
+        currentState = FlightState.Hovering;
+        hoverTimer = Mathf.Max(0f, duration);
+
+        animator.SetBool(IsDivingId, false);
+        animator.SetFloat(FlightSpeedId, hoverAnimationSpeed);
+
+        Vector2 velocity = GetVelocity();
+        velocity.y = 0f;
+        SetVelocity(velocity);
+    }
+
+    private void UpdateHovering()
+    {
+        hoverTimer -= Time.fixedDeltaTime;
+
+        if (hoverTimer > 0f)
+        {
+            return;
+        }
+
+        currentState = FlightState.Descending;
+        animator.SetFloat(
+            FlightSpeedId,
+            descentAnimationSpeed
+        );
+    }
+
+    private void UpdateDescending()
+    {
+        GetDescentPhysics(
+            out float acceleration,
+            out float maximumFallSpeed
+        );
+
+        Vector2 velocity = GetVelocity();
+
+        velocity.y -= acceleration * Time.fixedDeltaTime;
+        velocity.y = Mathf.Max(
+            velocity.y,
+            -maximumFallSpeed
+        );
 
         SetVelocity(velocity);
     }
 
-    private bool IsPointerOverUI(
-        InputAction.CallbackContext context
-    )
+    private void BeginDive()
     {
-        if (EventSystem.current == null)
-        {
-            return false;
-        }
-
-        // Keyboard and gamepad controls are not pointer controls.
-        if (context.control?.device is not Pointer pointer)
-        {
-            return false;
-        }
-
-        PointerEventData pointerEventData =
-            new PointerEventData(EventSystem.current)
-            {
-                position = pointer.position.ReadValue()
-            };
-
-        uiRaycastResults.Clear();
-
-        EventSystem.current.RaycastAll(
-            pointerEventData,
-            uiRaycastResults
+        diveTargetY = Mathf.Max(
+            minimumY,
+            transform.position.y - diveRowHeight
         );
 
-        return uiRaycastResults.Count > 0;
+        if (Mathf.Approximately(
+            diveTargetY,
+            transform.position.y
+        ))
+        {
+            return;
+        }
+
+        pointerGestureActive = false;
+        currentState = FlightState.Diving;
+
+        // Clear an old recovery trigger before starting another dive.
+        animator.ResetTrigger(RecoverId);
+        animator.SetBool(IsDivingId, true);
+
+        Vector2 velocity = GetVelocity();
+        velocity.y = -diveSpeed;
+        SetVelocity(velocity);
+    }
+
+    private void UpdateDiving()
+    {
+        if (transform.position.y > diveTargetY)
+        {
+            return;
+        }
+
+        Vector3 position = transform.position;
+        position.y = diveTargetY;
+        transform.position = position;
+
+        SetVelocity(Vector2.zero);
+
+        currentState = FlightState.Recovering;
+        recoveryTimer = recoveryDuration;
+
+        animator.SetBool(IsDivingId, false);
+        animator.ResetTrigger(RecoverId);
+        animator.SetTrigger(RecoverId);
+    }
+
+    private void UpdateRecovering()
+    {
+        SetVelocity(Vector2.zero);
+
+        recoveryTimer -= Time.fixedDeltaTime;
+
+        if (recoveryTimer > 0f)
+        {
+            return;
+        }
+
+        EnterHover(0.1f);
+    }
+
+    private void GetDescentPhysics(
+        out float acceleration,
+        out float maximumFallSpeed
+    )
+    {
+        float altitude = GetNormalizedAltitude();
+
+        if (altitude >= 0.66f)
+        {
+            acceleration = highDescentAcceleration;
+            maximumFallSpeed = highMaximumFallSpeed;
+            return;
+        }
+
+        if (altitude >= 0.33f)
+        {
+            acceleration = middleDescentAcceleration;
+            maximumFallSpeed = middleMaximumFallSpeed;
+            return;
+        }
+
+        acceleration = lowDescentAcceleration;
+        maximumFallSpeed = lowMaximumFallSpeed;
+    }
+
+    private float GetAltitudeHoverBonus()
+    {
+        float altitude = GetNormalizedAltitude();
+
+        if (altitude >= 0.66f)
+        {
+            return highHoverBonus;
+        }
+
+        if (altitude >= 0.33f)
+        {
+            return middleHoverBonus;
+        }
+
+        return 0f;
+    }
+
+    private float GetNormalizedAltitude()
+    {
+        return Mathf.InverseLerp(
+            minimumY,
+            maximumY,
+            transform.position.y
+        );
+    }
+
+    private void ClampRiseSpeed()
+    {
+        Vector2 velocity = GetVelocity();
+
+        if (velocity.y <= maximumRiseSpeed)
+        {
+            return;
+        }
+
+        velocity.y = maximumRiseSpeed;
+        SetVelocity(velocity);
     }
 
     private void CheckVerticalLimits()
@@ -213,39 +561,73 @@ public sealed class BirdController : MonoBehaviour
 
         if (currentY < minimumY || currentY > maximumY)
         {
-            GameManager.Instance.GameOver();
+            GameManager.Instance?.GameOver();
         }
     }
 
-    private void UpdateBirdRotation()
+    private void UpdateRotation()
     {
-        if (!rotateBird)
+        float targetAngle = currentState switch
         {
-            return;
-        }
-
-        float verticalVelocity = GetVelocity().y;
-
-        float targetAngle = verticalVelocity >= 0f
-            ? upwardRotation
-            : downwardRotation;
-
-        Quaternion targetRotation = Quaternion.Euler(
-            0f,
-            0f,
-            targetAngle
-        );
+            FlightState.Rising => risingAngle,
+            FlightState.Hovering => hoverAngle,
+            FlightState.Descending => descendingAngle,
+            FlightState.Diving => diveAngle,
+            FlightState.Recovering => hoverAngle,
+            _ => hoverAngle
+        };
 
         transform.rotation = Quaternion.Lerp(
             transform.rotation,
-            targetRotation,
-            rotationSpeed * Time.deltaTime
+            Quaternion.Euler(0f, 0f, targetAngle),
+            rotationSpeed * Time.fixedDeltaTime
         );
+    }
+
+    private bool CanAcceptInput()
+    {
+        if (
+            currentState == FlightState.Diving ||
+            currentState == FlightState.Recovering
+        )
+        {
+            return false;
+        }
+
+        return gameplayInputEnabled &&
+            GameManager.Instance != null &&
+            GameManager.Instance.IsPlaying;
+    }
+
+    private Vector2 ReadPointerPosition()
+    {
+        return pointerPositionAction?.action != null
+            ? pointerPositionAction.action.ReadValue<Vector2>()
+            : Vector2.zero;
+    }
+
+    private bool IsPointerOverUI(Vector2 pointerPosition)
+    {
+        if (EventSystem.current == null)
+        {
+            return false;
+        }
+
+        PointerEventData eventData =
+            new PointerEventData(EventSystem.current)
+            {
+                position = pointerPosition
+            };
+
+        uiResults.Clear();
+        EventSystem.current.RaycastAll(eventData, uiResults);
+
+        return uiResults.Count > 0;
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (!inputEnabled)
+        if (!gameplayInputEnabled)
         {
             return;
         }
@@ -255,7 +637,7 @@ public sealed class BirdController : MonoBehaviour
             other.CompareTag("Boundary")
         )
         {
-            GameManager.Instance.GameOver();
+            GameManager.Instance?.GameOver();
         }
     }
 

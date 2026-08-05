@@ -2289,6 +2289,7 @@ GameObject:
   - component: {fileID: 1820195500}
   - component: {fileID: 1820195499}
   - component: {fileID: 1820195498}
+  - component: {fileID: 1820195501}
   m_Layer: 0
   m_Name: PlayerBird
   m_TagString: Player
@@ -2345,7 +2346,7 @@ SpriteRenderer:
   m_SortingLayer: 4
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 4798676117009408506, guid: 3f32acf5098d14c1b8693d966a041883, type: 3}
+  m_Sprite: {fileID: 9170318868002836377, guid: ccc7b01a0d37c4481b50023267ba22de, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -2365,7 +2366,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -2.25, y: 0, z: 0}
-  m_LocalScale: {x: 2.9268703, y: 2.9268703, z: 2.9268703}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -2382,14 +2383,38 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e1dee0eed880f4120ad5161cf62c08ed, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BirdController
-  flapAction: {fileID: 4069480752620133726, guid: 9fcd3a195743a427ea9055d3199c31ab, type: 3}
-  flapVelocity: 7.5
-  maximumFallSpeed: 10
+  primaryContactAction: {fileID: 6287834902101610382, guid: 9fcd3a195743a427ea9055d3199c31ab, type: 3}
+  pointerPositionAction: {fileID: 3781026808018542224, guid: 9fcd3a195743a427ea9055d3199c31ab, type: 3}
+  keyboardFlapAction: {fileID: 509423775601526081, guid: 9fcd3a195743a427ea9055d3199c31ab, type: 3}
+  flapVelocity: 5.2
+  singleHoverDuration: 0.2
+  doubleTapWindow: 0.28
+  burstVelocity: 7.8
+  burstHoverDuration: 0.5
+  riseDeceleration: 8
+  maximumRiseSpeed: 8.5
   minimumY: -4.8
   maximumY: 4.8
-  rotateBird: 1
-  upwardRotation: 25
-  downwardRotation: -60
+  highDescentAcceleration: 1.1
+  highMaximumFallSpeed: 2.2
+  highHoverBonus: 0.15
+  middleDescentAcceleration: 2.2
+  middleMaximumFallSpeed: 4.2
+  middleHoverBonus: 0.05
+  lowDescentAcceleration: 3.8
+  lowMaximumFallSpeed: 7
+  minimumSwipeDistancePixels: 80
+  maximumSwipeDuration: 0.45
+  diveRowHeight: 1
+  diveSpeed: 9
+  hoverAnimationSpeed: 1
+  flapAnimationSpeed: 1.2
+  burstAnimationSpeed: 1.5
+  descentAnimationSpeed: 0.8
+  risingAngle: 18
+  hoverAngle: 0
+  descendingAngle: -22
+  diveAngle: -60
   rotationSpeed: 8
 --- !u!58 &1820195499
 CircleCollider2D:
@@ -2454,6 +2479,28 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 1
   m_Constraints: 4
+--- !u!95 &1820195501
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1820195495}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 8a2868715f2954e978fa801c72e46270, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &1891176927
 GameObject:
   m_ObjectHideFlags: 0

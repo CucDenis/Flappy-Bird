@@ -40,6 +40,90 @@
                     "isPartOfComposite": false
                 }
             ]
+        },
+        {
+            "name": "PrimaryContact",
+            "id": "6ec72862-dc8e-40d3-9004-e4db269a75bc",
+            "actions": [
+                {
+                    "name": "New action",
+                    "type": "Button",
+                    "id": "2e862298-2d9d-40ef-afa6-0185e12db615",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "86501e64-ce80-4ba6-9e6a-82b91b9f8580",
+                    "path": "<Pointer>/press",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "New action",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        },
+        {
+            "name": "PointerPosition",
+            "id": "bc310d96-6a5d-491a-aae5-917fca5b3355",
+            "actions": [
+                {
+                    "name": "New action",
+                    "type": "PassThrough",
+                    "id": "1d363b3f-80ae-4113-89ae-9e4d071fade8",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "70e43a15-8fd9-4b68-a0a4-677dbbc890ff",
+                    "path": "<Pointer>/position",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "New action",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        },
+        {
+            "name": "KeyboardFlap",
+            "id": "5b17eedf-7f23-4faa-b2f4-84154d608b0a",
+            "actions": [
+                {
+                    "name": "New action",
+                    "type": "Button",
+                    "id": "86fbf729-b75b-4b9b-accc-46ee52d88e1d",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "73ad0a6b-da28-4247-a5b2-48964a538dfc",
+                    "path": "<Keyboard>/space",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "New action",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
         }
     ],
     "controlSchemes": []
