@@ -203,6 +203,38 @@ public sealed class GameManager : MonoBehaviour
         SceneManager.LoadScene(currentScene.buildIndex);
     }
 
+    private void ShowReadyUI()
+    {
+        startPanel.SetActive(true);
+        hudPanel.SetActive(false);
+        pausePanel.SetActive(false);
+        gameOverPanel.SetActive(false);
+    }
+
+    private void ShowPlayingUI()
+    {
+        startPanel.SetActive(false);
+        hudPanel.SetActive(true);
+        pausePanel.SetActive(false);
+        gameOverPanel.SetActive(false);
+    }
+
+    private void ShowPausedUI()
+    {
+        startPanel.SetActive(false);
+        hudPanel.SetActive(true);
+        pausePanel.SetActive(true);
+        gameOverPanel.SetActive(false);
+    }
+
+    private void ShowGameOverUI()
+    {
+        startPanel.SetActive(false);
+        hudPanel.SetActive(false);
+        pausePanel.SetActive(false);
+        gameOverPanel.SetActive(true);
+    }
+
     private void UpdateScoreUI()
     {
         if (scoreText != null)
