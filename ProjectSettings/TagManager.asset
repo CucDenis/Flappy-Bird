@@ -43,10 +43,13 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
-  - name: Background
+  - name: BackgroundFar
     uniqueID: 2686571297
     locked: 0
-  - name: BackgroundClouds
+  - name: Background
+    uniqueID: 2431024461
+    locked: 0
+  - name: BackgroundDecor
     uniqueID: 1857027591
     locked: 0
   - name: Enemies
@@ -54,6 +57,9 @@ TagManager:
     locked: 0
   - name: Player
     uniqueID: 4254032391
+    locked: 0
+  - name: Foreground
+    uniqueID: 910921321
     locked: 0
   m_RenderingLayers:
   - Default

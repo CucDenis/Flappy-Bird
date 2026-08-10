@@ -18,6 +18,12 @@ public sealed class BirdController : MonoBehaviour
         Stopped
     }
 
+    [Header("Start Flight Transition")]
+    [SerializeField] private float gameplayX = -2f;
+    [SerializeField] private float startTransitionDuration = 1.2f;
+    [SerializeField] private AnimationCurve startTransitionCurve =
+        AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+
     [Header("Input")]
     [SerializeField]
     private InputActionReference primaryContactAction;
@@ -81,6 +87,10 @@ public sealed class BirdController : MonoBehaviour
     [Header("Dive Recovery")]
     [SerializeField] private float recoveryDuration = 0.15f;
 
+    private bool startTransitionActive;
+    private float startTransitionTimer;
+    private float startTransitionInitialX;
+
     private static readonly int FlightSpeedId =
         Animator.StringToHash("FlightSpeed");
 
@@ -107,6 +117,47 @@ public sealed class BirdController : MonoBehaviour
     private float hoverTimer;
     private float diveTargetY;
     private float recoveryTimer;
+    public bool IsStartTransitionActive =>
+    startTransitionActive;
+    
+    public void BeginStartTransition()
+    {
+        startTransitionInitialX = transform.position.x;
+        startTransitionTimer = 0f;
+        startTransitionActive = true;
+    }
+
+    private void UpdateStartTransition()
+    {
+        startTransitionTimer += Time.fixedDeltaTime;
+
+        float normalizedTime = Mathf.Clamp01(
+            startTransitionTimer / startTransitionDuration
+        );
+
+        float curvedTime =
+            startTransitionCurve.Evaluate(normalizedTime);
+
+        Vector2 position = body.position;
+
+        position.x = Mathf.Lerp(
+            startTransitionInitialX,
+            gameplayX,
+            curvedTime
+        );
+
+        body.MovePosition(position);
+
+        if (normalizedTime >= 1f)
+        {
+            Vector2 finalPosition = body.position;
+            finalPosition.x = gameplayX;
+
+            body.position = finalPosition;
+
+            startTransitionActive = false;
+        }
+    }
 
     private void Awake()
     {
@@ -136,6 +187,11 @@ public sealed class BirdController : MonoBehaviour
         if (!gameplayInputEnabled || !body.simulated)
         {
             return;
+        }
+
+        if (startTransitionActive)
+        {
+            UpdateStartTransition();
         }
 
         switch (currentState)
@@ -172,8 +228,12 @@ public sealed class BirdController : MonoBehaviour
         body.simulated = true;
 
         SetVelocity(Vector2.zero);
+
         EnableInputActions();
+
         EnterHover(0.15f);
+
+        BeginStartTransition();
     }
 
     public void PauseInput()
@@ -431,6 +491,11 @@ public sealed class BirdController : MonoBehaviour
 
     private void BeginDive()
     {
+        if (startTransitionActive)
+        {
+            return;
+        }
+        
         diveTargetY = Mathf.Max(
             minimumY,
             transform.position.y - diveRowHeight

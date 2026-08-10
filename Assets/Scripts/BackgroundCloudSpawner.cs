@@ -3,33 +3,69 @@ using UnityEngine;
 
 public sealed class BackgroundCloudSpawner : MonoBehaviour
 {
-    [Header("Clouds")]
+    [Header("Cloud Prefabs")]
     [SerializeField]
     private BackgroundCloudMover[] cloudPrefabs;
 
-    [Header("Spawn Area")]
+    [Header("Horizontal Area")]
     [SerializeField] private float spawnX = 9f;
     [SerializeField] private float destructionX = -9f;
+
+    [Header("Vertical Area")]
     [SerializeField] private float minimumY = -4f;
     [SerializeField] private float maximumY = 4f;
 
-    [Header("Timing")]
-    [SerializeField] private float minimumSpawnDelay = 3f;
-    [SerializeField] private float maximumSpawnDelay = 7f;
+    [Header("Spawn Timing")]
+    [SerializeField] private float minimumSpawnDelay = 2.5f;
+    [SerializeField] private float maximumSpawnDelay = 5.5f;
+    [SerializeField] private int initialCloudCount = 4;
 
     [Header("Movement")]
-    [SerializeField] private float minimumSpeed = 0.2f;
+    [SerializeField] private float minimumSpeed = 0.25f;
     [SerializeField] private float maximumSpeed = 0.8f;
 
     [Header("Scale")]
-    [SerializeField] private float minimumScale = 0.6f;
-    [SerializeField] private float maximumScale = 1.5f;
+    [SerializeField] private float minimumScale = 0.7f;
+    [SerializeField] private float maximumScale = 1.4f;
+
+    private bool cloudsEnabled = true;
 
     private Coroutine spawnCoroutine;
 
     private void Start()
     {
-        spawnCoroutine = StartCoroutine(SpawnLoop());
+        SpawnInitialClouds();
+
+        spawnCoroutine = StartCoroutine(
+            SpawnLoop()
+        );
+    }
+
+    public void SetCloudsEnabled(bool enabled)
+    {
+        cloudsEnabled = enabled;
+    }
+
+    private void SpawnInitialClouds()
+    {
+        if (!cloudsEnabled)
+        {
+            return;
+        }
+
+        for (
+            int index = 0;
+            index < initialCloudCount;
+            index++
+        )
+        {
+            float randomX = Random.Range(
+                destructionX,
+                spawnX
+            );
+
+            SpawnCloud(randomX);
+        }
     }
 
     private IEnumerator SpawnLoop()
@@ -43,11 +79,16 @@ public sealed class BackgroundCloudSpawner : MonoBehaviour
 
             yield return new WaitForSeconds(delay);
 
-            SpawnCloud();
+            if (!cloudsEnabled)
+            {
+                continue;
+            }
+
+            SpawnCloud(spawnX);
         }
     }
 
-    private void SpawnCloud()
+    private void SpawnCloud(float x)
     {
         if (
             cloudPrefabs == null ||
@@ -59,29 +100,28 @@ public sealed class BackgroundCloudSpawner : MonoBehaviour
 
         BackgroundCloudMover prefab =
             cloudPrefabs[
-                Random.Range(0, cloudPrefabs.Length)
+                Random.Range(
+                    0,
+                    cloudPrefabs.Length
+                )
             ];
 
         if (prefab == null)
         {
-            Debug.LogError(
-                "BackgroundCloudSpawner contains a missing cloud prefab reference.",
-                this
-            );
-
             return;
         }
 
-        float spawnY = Random.Range(
+        float y = Random.Range(
             minimumY,
             maximumY
         );
 
-        BackgroundCloudMover cloud = Instantiate(
-            prefab,
-            new Vector3(spawnX, spawnY, 1f),
-            Quaternion.identity
-        );
+        BackgroundCloudMover cloud =
+            Instantiate(
+                prefab,
+                new Vector3(x, y, 1f),
+                Quaternion.identity
+            );
 
         float scale = Random.Range(
             minimumScale,

@@ -1,3 +1,4 @@
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -14,9 +15,13 @@ public sealed class GameManager : MonoBehaviour
         GameOver
     }
 
+    [Header("Game Start Sequence")]
+    [SerializeField] private float enemyStartDelay = 1.8f;
+
     [Header("Gameplay")]
     [SerializeField] private BirdController bird;
     [SerializeField] private CrowSpawner crowSpawner;
+    [SerializeField] private BackgroundStageManager backgroundStageManager;
 
     [Header("UI Panels")]
     [SerializeField] private GameObject startPanel;
@@ -74,6 +79,21 @@ public sealed class GameManager : MonoBehaviour
         SetPanelActive(gameOverPanel, false);
     }
 
+    private IEnumerator BeginEnemySpawningAfterIntro()
+    {
+        yield return new WaitForSeconds(enemyStartDelay);
+
+        if (CurrentState != GameState.Playing)
+        {
+            yield break;
+        }
+
+        if (crowSpawner != null)
+        {
+            crowSpawner.BeginSpawning();
+        }
+    }
+
     public void StartGame()
     {
         if (CurrentState != GameState.Ready)
@@ -98,26 +118,29 @@ public sealed class GameManager : MonoBehaviour
             bird.BeginGame();
         }
 
-        if (crowSpawner != null)
-        {
-            crowSpawner.BeginSpawning();
-        }
+        StartCoroutine(
+            BeginEnemySpawningAfterIntro()
+        );
     }
 
     public void AddScore(int amount)
     {
-        if (!IsPlaying || amount <= 0)
+        if (CurrentState != GameState.Playing)
         {
             return;
         }
 
         Score += amount;
-
         UpdateScoreUI();
 
         if (crowSpawner != null)
         {
             crowSpawner.HandleScoreChanged(Score);
+        }
+
+        if (backgroundStageManager != null)
+        {
+            backgroundStageManager.HandleScoreChanged(Score);
         }
     }
 

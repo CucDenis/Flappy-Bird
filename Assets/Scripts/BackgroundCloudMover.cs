@@ -30,7 +30,10 @@ public sealed class BackgroundCloudMover : MonoBehaviour
             Space.World
         );
 
-        if (transform.position.x <= destructionX)
+        if (
+            transform.position.x <=
+            destructionX
+        )
         {
             Destroy(gameObject);
         }
