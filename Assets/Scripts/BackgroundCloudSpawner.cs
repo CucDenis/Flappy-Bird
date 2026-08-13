@@ -46,6 +46,15 @@ public sealed class BackgroundCloudSpawner : MonoBehaviour
         cloudsEnabled = enabled;
     }
 
+    public void SetVerticalRange(
+        float minimum,
+        float maximum
+    )
+    {
+        minimumY = minimum;
+        maximumY = maximum;
+    }
+
     private void SpawnInitialClouds()
     {
         if (!cloudsEnabled)

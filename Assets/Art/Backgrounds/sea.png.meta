@@ -1,19 +1,10 @@
 fileFormatVersion: 2
-guid: ccc7b01a0d37c4481b50023267ba22de
+guid: 7f7ab0a2a4092442bafd0dade5a1f9da
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 3683285186813948921
-    second: bird_first_attempt_0
-  - first:
-      213: 4651183887584964610
-    second: bird_first_attempt_1
-  - first:
-      213: -1271710172915187795
-    second: bird_first_attempt_2
-  - first:
-      213: 9170318868002836377
-    second: bird_first_attempt_3
+      213: 697817598604000450
+    second: sea_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -57,12 +48,12 @@ TextureImporter:
   compressionQuality: 50
   spriteMode: 2
   spriteExtrude: 1
-  spriteMeshType: 1
+  spriteMeshType: 0
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
   spritePixelsToUnits: 32
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
-  spriteGenerateFallbackPhysicsShape: 1
+  spriteGenerateFallbackPhysicsShape: 0
   alphaUsage: 1
   alphaIsTransparency: 1
   spriteTessellationDetail: -1
@@ -122,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: bird_first_attempt_0
+      name: sea_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 32
-        height: 32
+        width: 360
+        height: 160
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -137,74 +128,118 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 9f3f08ecc58ad1330800000000000000
-      internalID: 3683285186813948921
+      spriteID: 2ccbec2a8652fa900800000000000000
+      internalID: 697817598604000450
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: bird_first_attempt_1
+      name: sea_1
       rect:
         serializedVersion: 2
-        x: 32
+        x: 360
         y: 0
-        width: 32
-        height: 32
+        width: 360
+        height: 160
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 200b58c4a135c8040800000000000000
-      internalID: 4651183887584964610
+      spriteID: 5ebb4e89bf32045589488e689afeba17
+      internalID: -744629589
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: bird_first_attempt_2
+      name: sea_2
       rect:
         serializedVersion: 2
-        x: 64
+        x: 720
         y: 0
-        width: 32
-        height: 32
+        width: 360
+        height: 160
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: dafb326e55af95ee0800000000000000
-      internalID: -1271710172915187795
+      spriteID: e5a34bf2ea1ed4f84812de34cf74a48c
+      internalID: 1177676192
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: bird_first_attempt_3
+      name: sea_3
       rect:
         serializedVersion: 2
-        x: 96
+        x: 1080
         y: 0
-        width: 32
-        height: 32
+        width: 360
+        height: 160
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 99f0f5c8c64834f70800000000000000
-      internalID: 9170318868002836377
+      spriteID: d3107863d57c648d5a57dd19efe372f6
+      internalID: 1674984803
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sea_4
+      rect:
+        serializedVersion: 2
+        x: 1440
+        y: 0
+        width: 360
+        height: 160
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b4e1779f5834f4bb0af3ae79f80b6553
+      internalID: 105790453
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sea_5
+      rect:
+        serializedVersion: 2
+        x: 1800
+        y: 0
+        width: 360
+        height: 160
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e00255b9fb2f448a584b4b0b84d9a82f
+      internalID: -1928329992
       vertices: []
       indices: 
       edges: []
@@ -213,7 +248,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 3d20a9c8f9601443bbea3c7eeb2dcef1
+    spriteID: 5e97eb03825dee720800000000000000
     internalID: 0
     vertices: []
     indices: 
@@ -223,12 +258,14 @@ TextureImporter:
     spriteCustomMetadata:
       entries:
       - key: SpriteEditor.SliceSettings
-        value: '{"sliceOnImport":false,"gridCellCount":{"x":4.0,"y":1.0},"gridSpriteSize":{"x":32.0,"y":32.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":1,"slicingType":2,"keepEmptyRects":false,"isAlternate":false}'
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":360.0,"y":160.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":1,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
-      bird_first_attempt_0: 3683285186813948921
-      bird_first_attempt_1: 4651183887584964610
-      bird_first_attempt_2: -1271710172915187795
-      bird_first_attempt_3: 9170318868002836377
+      sea_0: 697817598604000450
+      sea_1: -744629589
+      sea_2: 1177676192
+      sea_3: 1674984803
+      sea_4: 105790453
+      sea_5: -1928329992
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

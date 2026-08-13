@@ -3,88 +3,266 @@ using UnityEngine;
 
 public sealed class BackgroundStageManager : MonoBehaviour
 {
+    public enum StageType
+    {
+        Sea,
+        Beach,
+        Hills,
+        Mountains,
+        LowSky,
+        MidSky,
+        HighSky,
+        DeepSpace
+    }
+
     [Serializable]
     public sealed class Stage
     {
-        public string stageName;
+        public StageType stageType;
 
         [Min(0)]
         public int minimumScore;
-
-        public GameObject root;
-
-        public bool allowClouds = true;
     }
 
-    [Header("References")]
+    [Header("Clouds")]
     [SerializeField]
     private BackgroundCloudSpawner cloudSpawner;
+
+    [Header("Terrestrial")]
+    [SerializeField]
+    private EnvironmentHorizontalScroller terrestrialStripScroller;
+
+    [Header("Sky")]
+    [SerializeField]
+    private SkyBackdropMover lowSkyMover;
+
+    [SerializeField]
+    private SkyBackdropMover midSkyMover;
+
+    [SerializeField]
+    private SkyBackdropMover highSkyMover;
+
+    [SerializeField]
+    private SkyBackdropMover deepSpaceMover;
 
     [Header("Stages")]
     [SerializeField]
     private Stage[] stages;
 
+    [Header("Sky Positions")]
+    [SerializeField]
+    private float hiddenSkyY = 10f;
+
+    [SerializeField]
+    private float activeSkyY = 0f;
+
+    [SerializeField]
+    private float exitedSkyY = -10f;
+
     private int activeStageIndex = -1;
 
     private void Start()
     {
-        ApplyStageForScore(0);
+        InitializeSkyPositions();
+
+        HandleScoreChanged(0);
     }
 
     public void HandleScoreChanged(int score)
     {
-        ApplyStageForScore(score);
-    }
-
-    private void ApplyStageForScore(int score)
-    {
-        if (stages == null || stages.Length == 0)
+        if (
+            stages == null ||
+            stages.Length == 0
+        )
         {
             return;
         }
 
-        int targetStageIndex = 0;
+        int targetIndex =
+            FindStageIndex(score);
 
-        for (int i = 0; i < stages.Length; i++)
+        if (targetIndex == activeStageIndex)
         {
-            if (score >= stages[i].minimumScore)
+            return;
+        }
+
+        activeStageIndex = targetIndex;
+
+        ApplyStage(
+            stages[targetIndex].stageType
+        );
+    }
+
+    private int FindStageIndex(int score)
+    {
+        int result = 0;
+
+        for (
+            int index = 0;
+            index < stages.Length;
+            index++
+        )
+        {
+            if (
+                score >=
+                stages[index].minimumScore
+            )
             {
-                targetStageIndex = i;
+                result = index;
             }
         }
 
-        if (targetStageIndex == activeStageIndex)
-        {
-            return;
-        }
-
-        ApplyStage(targetStageIndex);
+        return result;
     }
 
-    private void ApplyStage(int index)
+    private void InitializeSkyPositions()
     {
-        if (index < 0 || index >= stages.Length)
+        SetLocalY(
+            lowSkyMover,
+            hiddenSkyY
+        );
+
+        SetLocalY(
+            midSkyMover,
+            hiddenSkyY * 2f
+        );
+
+        SetLocalY(
+            highSkyMover,
+            hiddenSkyY * 3f
+        );
+
+        SetLocalY(
+            deepSpaceMover,
+            hiddenSkyY * 4f
+        );
+    }
+
+    private void ApplyStage(StageType stageType)
+    {
+        switch (stageType)
+        {
+            case StageType.Sea:
+                terrestrialStripScroller?.StartScrolling();
+
+                cloudSpawner?.SetCloudsEnabled(true);
+                cloudSpawner?.SetVerticalRange(
+                    0.5f,
+                    4.2f
+                );
+                break;
+
+            case StageType.Beach:
+                cloudSpawner?.SetCloudsEnabled(true);
+                cloudSpawner?.SetVerticalRange(
+                    0.8f,
+                    4.2f
+                );
+                break;
+
+            case StageType.Hills:
+                cloudSpawner?.SetVerticalRange(
+                    1.4f,
+                    4.2f
+                );
+                break;
+
+            case StageType.Mountains:
+                cloudSpawner?.SetVerticalRange(
+                    2.2f,
+                    4.2f
+                );
+                break;
+
+            case StageType.LowSky:
+                cloudSpawner?.SetCloudsEnabled(true);
+                cloudSpawner?.SetVerticalRange(
+                    -3.5f,
+                    4.2f
+                );
+                break;
+
+            case StageType.MidSky:
+                EnterMidSky();
+                cloudSpawner?.SetCloudsEnabled(true);
+                cloudSpawner?.SetVerticalRange(
+                    -3.5f,
+                    4.2f
+                );
+                break;
+
+            case StageType.HighSky:
+                EnterHighSky();
+                cloudSpawner?.SetCloudsEnabled(true);
+                cloudSpawner?.SetVerticalRange(
+                    -1.5f,
+                    4.2f
+                );
+                break;
+
+            case StageType.DeepSpace:
+                EnterDeepSpace();
+                cloudSpawner?.SetCloudsEnabled(false);
+                cloudSpawner?.SetVerticalRange(
+                    -1.5f,
+                    4.2f
+                );
+                break;
+        }
+    }
+
+    private void EnterMidSky()
+    {
+        lowSkyMover?.MoveToY(
+            exitedSkyY
+        );
+
+        midSkyMover?.MoveToY(
+            activeSkyY
+        );
+    }
+
+    private void EnterHighSky()
+    {
+        midSkyMover?.MoveToY(
+            exitedSkyY
+        );
+
+        highSkyMover?.MoveToY(
+            activeSkyY
+        );
+    }
+
+    private void EnterDeepSpace()
+    {
+        highSkyMover?.MoveToY(
+            exitedSkyY
+        );
+
+        deepSpaceMover?.MoveToY(
+            activeSkyY
+        );
+    }
+
+    private static void SetLocalY(
+        SkyBackdropMover mover,
+        float y
+    )
+    {
+        if (mover == null)
         {
             return;
         }
 
-        activeStageIndex = index;
+        Transform target =
+            mover.transform;
 
-        for (int i = 0; i < stages.Length; i++)
-        {
-            Stage stage = stages[i];
+        Vector3 position =
+            target.localPosition;
 
-            if (stage.root != null)
-            {
-                stage.root.SetActive(i == activeStageIndex);
-            }
-        }
+        position.y = y;
 
-        if (cloudSpawner != null)
-        {
-            cloudSpawner.SetCloudsEnabled(
-                stages[activeStageIndex].allowClouds
-            );
-        }
+        target.localPosition =
+            position;
     }
 }

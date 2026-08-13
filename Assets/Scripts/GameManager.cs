@@ -12,7 +12,8 @@ public sealed class GameManager : MonoBehaviour
         Ready,
         Playing,
         Paused,
-        GameOver
+        GameOver,
+        Completed
     }
 
     [Header("Game Start Sequence")]
@@ -33,6 +34,9 @@ public sealed class GameManager : MonoBehaviour
     [SerializeField] private TMP_Text scoreText;
     [SerializeField] private TMP_Text finalScoreText;
 
+    [Header("Completion")]
+    [SerializeField] private int completionScore = 8;
+
     public GameState CurrentState { get; private set; }
     public int Score { get; private set; }
 
@@ -43,7 +47,10 @@ public sealed class GameManager : MonoBehaviour
         CurrentState == GameState.Paused;
 
     public bool HasGameEnded =>
-        CurrentState == GameState.GameOver;
+        CurrentState ==
+            GameState.GameOver ||
+        CurrentState ==
+            GameState.Completed;
 
     private void Awake()
     {
@@ -131,6 +138,7 @@ public sealed class GameManager : MonoBehaviour
         }
 
         Score += amount;
+
         UpdateScoreUI();
 
         if (crowSpawner != null)
@@ -140,8 +148,16 @@ public sealed class GameManager : MonoBehaviour
 
         if (backgroundStageManager != null)
         {
-            backgroundStageManager.HandleScoreChanged(Score);
+            backgroundStageManager.HandleScoreChanged(
+                Score
+            );
         }
+
+        if (Score >= completionScore)
+        {
+            CompleteGame();
+        }
+        
     }
 
     public void PauseGame()
@@ -226,44 +242,63 @@ public sealed class GameManager : MonoBehaviour
         SceneManager.LoadScene(currentScene.buildIndex);
     }
 
-    private void ShowReadyUI()
-    {
-        startPanel.SetActive(true);
-        hudPanel.SetActive(false);
-        pausePanel.SetActive(false);
-        gameOverPanel.SetActive(false);
-    }
-
-    private void ShowPlayingUI()
-    {
-        startPanel.SetActive(false);
-        hudPanel.SetActive(true);
-        pausePanel.SetActive(false);
-        gameOverPanel.SetActive(false);
-    }
-
-    private void ShowPausedUI()
-    {
-        startPanel.SetActive(false);
-        hudPanel.SetActive(true);
-        pausePanel.SetActive(true);
-        gameOverPanel.SetActive(false);
-    }
-
-    private void ShowGameOverUI()
-    {
-        startPanel.SetActive(false);
-        hudPanel.SetActive(false);
-        pausePanel.SetActive(false);
-        gameOverPanel.SetActive(true);
-    }
-
     private void UpdateScoreUI()
     {
         if (scoreText != null)
         {
             scoreText.text = Score.ToString();
         }
+    }
+
+    private void CompleteGame()
+    {
+        if (
+            CurrentState !=
+            GameState.Playing
+        )
+        {
+            return;
+        }
+
+        CurrentState =
+            GameState.Completed;
+
+        if (crowSpawner != null)
+        {
+            crowSpawner.StopSpawning();
+        }
+
+        if (bird != null)
+        {
+            bird.StopBird();
+        }
+
+        SetPanelActive(
+            hudPanel,
+            false
+        );
+
+        SetPanelActive(
+            pausePanel,
+            false
+        );
+
+        SetPanelActive(
+            gameOverPanel,
+            true
+        );
+
+        if (finalScoreText != null)
+        {
+            finalScoreText.text =
+                $"FLIGHT COMPLETE\nScore: {Score}";
+        }
+
+        Debug.Log(
+            $"GAME COMPLETED AT SCORE {Score}"
+        );
+
+        Time.timeScale = 0f;
     }
 
     private void OnApplicationPause(bool applicationPaused)
