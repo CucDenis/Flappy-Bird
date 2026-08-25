@@ -1,58 +1,61 @@
+using System;
 using UnityEngine;
 
 public sealed class EnvironmentHorizontalScroller : MonoBehaviour
 {
     [Header("Movement")]
     [SerializeField]
-    private float speed = 2f;
+    private float speed = 0.1f;
 
-    [Header("Entry")]
+    [Header("Trigger")]
     [SerializeField]
-    private float entryX = 3.5f;
+    private Transform stageTriggerLine;
 
-    [Header("Lifecycle")]
+    [Header("Stage Markers")]
     [SerializeField]
-    private bool disableWhenOffscreen = true;
+    private Transform beachStageMarker;
+
+    [SerializeField]
+    private Transform hillsStageMarker;
+
+    [SerializeField]
+    private Transform mountainsStageMarker;
+
+    [SerializeField]
+    private Transform mountainExitMarker;
 
     private bool scrolling;
 
-    private Camera gameplayCamera;
-    private SpriteRenderer[] spriteRenderers;
+    private bool beachTriggered;
+    private bool hillsTriggered;
+    private bool mountainsTriggered;
+    private bool mountainExitTriggered;
 
-    private void Awake()
-    {
-        gameplayCamera = Camera.main;
+    public bool IsScrolling => scrolling;
 
-        spriteRenderers =
-            GetComponentsInChildren<SpriteRenderer>(
-                true
-            );
-    }
+    public event Action BeachReached;
+    public event Action HillsReached;
+    public event Action MountainsReached;
+    public event Action MountainExitReached;
 
     public void StartScrolling()
     {
-        gameObject.SetActive(true);
-        scrolling = true;
-    }
-
-    public void EnterFromRight()
-    {
-        gameObject.SetActive(true);
-
-        Vector3 position =
-            transform.localPosition;
-
-        position.x = entryX;
-
-        transform.localPosition =
-            position;
-
         scrolling = true;
     }
 
     public void StopScrolling()
     {
         scrolling = false;
+    }
+
+    public void ResetProgression()
+    {
+        scrolling = false;
+
+        beachTriggered = false;
+        hillsTriggered = false;
+        mountainsTriggered = false;
+        mountainExitTriggered = false;
     }
 
     private void Update()
@@ -67,62 +70,110 @@ public sealed class EnvironmentHorizontalScroller : MonoBehaviour
             speed *
             Time.deltaTime;
 
-        if (IsFullyOutsideLeft())
-        {
-            FinishScrolling();
-        }
+        CheckMarkers();
     }
 
-    private bool IsFullyOutsideLeft()
+    private void CheckMarkers()
     {
+        if (stageTriggerLine == null)
+        {
+            return;
+        }
+
+        float triggerX =
+            stageTriggerLine.position.x;
+
         if (
-            gameplayCamera == null ||
-            spriteRenderers == null ||
-            spriteRenderers.Length == 0
-        )
-        {
-            return false;
-        }
-
-        float cameraLeft =
-            gameplayCamera.transform.position.x -
-            gameplayCamera.orthographicSize *
-            gameplayCamera.aspect;
-
-        float rightMostEdge =
-            float.NegativeInfinity;
-
-        foreach (
-            SpriteRenderer spriteRenderer
-            in spriteRenderers
-        )
-        {
-            if (
-                spriteRenderer == null ||
-                !spriteRenderer.enabled
+            !beachTriggered &&
+            HasReached(
+                beachStageMarker,
+                triggerX
             )
-            {
-                continue;
-            }
-
-            rightMostEdge =
-                Mathf.Max(
-                    rightMostEdge,
-                    spriteRenderer.bounds.max.x
-                );
-        }
-
-        return rightMostEdge <
-               cameraLeft;
-    }
-
-    private void FinishScrolling()
-    {
-        scrolling = false;
-
-        if (disableWhenOffscreen)
+        )
         {
-            gameObject.SetActive(false);
+            beachTriggered = true;
+            BeachReached?.Invoke();
+        }
+
+        if (
+            !hillsTriggered &&
+            HasReached(
+                hillsStageMarker,
+                triggerX
+            )
+        )
+        {
+            hillsTriggered = true;
+            HillsReached?.Invoke();
+        }
+
+        if (
+            !mountainsTriggered &&
+            HasReached(
+                mountainsStageMarker,
+                triggerX
+            )
+        )
+        {
+            mountainsTriggered = true;
+            MountainsReached?.Invoke();
+        }
+
+        if (
+            !mountainExitTriggered &&
+            HasReached(
+                mountainExitMarker,
+                triggerX
+            )
+        )
+        {
+            mountainExitTriggered = true;
+
+            StopScrolling();
+
+            MountainExitReached?.Invoke();
         }
     }
+
+    private static bool HasReached(
+        Transform marker,
+        float triggerX
+    )
+    {
+        return
+            marker != null &&
+            marker.position.x <= triggerX;
+    }
+
+#if UNITY_EDITOR
+    private void OnDrawGizmos()
+    {
+        if (stageTriggerLine == null)
+        {
+            return;
+        }
+
+        float x =
+            stageTriggerLine.position.x;
+
+        Vector3 bottom =
+            new Vector3(
+                x,
+                -20f,
+                0f
+            );
+
+        Vector3 top =
+            new Vector3(
+                x,
+                20f,
+                0f
+            );
+
+        Gizmos.DrawLine(
+            bottom,
+            top
+        );
+    }
+#endif
 }

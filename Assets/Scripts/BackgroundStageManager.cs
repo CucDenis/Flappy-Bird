@@ -1,7 +1,8 @@
-using System;
+using System.Collections;
 using UnityEngine;
 
-public sealed class BackgroundStageManager : MonoBehaviour
+public sealed class BackgroundStageManager
+    : MonoBehaviour
 {
     public enum StageType
     {
@@ -15,24 +16,26 @@ public sealed class BackgroundStageManager : MonoBehaviour
         DeepSpace
     }
 
-    [Serializable]
-    public sealed class Stage
-    {
-        public StageType stageType;
+    [Header("Terrestrial")]
+    [SerializeField]
+    private EnvironmentHorizontalScroller
+        terrestrialScroller;
 
-        [Min(0)]
-        public int minimumScore;
-    }
+    [SerializeField]
+    private TerrestrialVerticalExitMover
+        terrestrialVerticalExitMover;
 
     [Header("Clouds")]
     [SerializeField]
-    private BackgroundCloudSpawner cloudSpawner;
+    private BackgroundCloudSpawner
+        cloudSpawner;
 
-    [Header("Terrestrial")]
+    [Header("Crow Difficulty")]
     [SerializeField]
-    private EnvironmentHorizontalScroller terrestrialStripScroller;
+    private CrowSpawner
+        crowSpawner;
 
-    [Header("Sky")]
+    [Header("Sky Backdrops")]
     [SerializeField]
     private SkyBackdropMover lowSkyMover;
 
@@ -45,10 +48,6 @@ public sealed class BackgroundStageManager : MonoBehaviour
     [SerializeField]
     private SkyBackdropMover deepSpaceMover;
 
-    [Header("Stages")]
-    [SerializeField]
-    private Stage[] stages;
-
     [Header("Sky Positions")]
     [SerializeField]
     private float hiddenSkyY = 10f;
@@ -59,60 +58,476 @@ public sealed class BackgroundStageManager : MonoBehaviour
     [SerializeField]
     private float exitedSkyY = -10f;
 
-    private int activeStageIndex = -1;
+    [Header("Sky Level Durations")]
+    [SerializeField]
+    private float lowSkyDuration = 20f;
+
+    [SerializeField]
+    private float midSkyDuration = 20f;
+
+    [SerializeField]
+    private float highSkyDuration = 20f;
+
+    [SerializeField]
+    private HorizontalParallaxMover[]
+        deepSpaceParallaxLayers;
+
+    [SerializeField]
+    private float deepSpaceDuration = 35f;
+
+    private bool hasActiveStage;
+
+    private bool progressionStarted;
+
+    private StageType currentStage;
+
+    private Coroutine skyProgressionCoroutine;
+
+    private Coroutine deepSpaceCoroutine;
+
+    public StageType CurrentStage =>
+        currentStage;
+
+    private void Awake()
+    {
+        SubscribeToTerrestrialEvents();
+    }
 
     private void Start()
     {
+        progressionStarted = false;
+
         InitializeSkyPositions();
 
-        HandleScoreChanged(0);
+        SetStage(
+            StageType.Sea
+        );
+
+        cloudSpawner?
+            .SetCloudsEnabled(false);
     }
 
-    public void HandleScoreChanged(int score)
+    private void OnDestroy()
     {
+        UnsubscribeFromTerrestrialEvents();
+    }
+
+    public void BeginProgression()
+    {
+        if (progressionStarted)
+        {
+            return;
+        }
+
+        progressionStarted = true;
+
+        ConfigureCloudRange(
+            currentStage
+        );
+
+        cloudSpawner?
+            .BeginSpawning();
+
+        terrestrialScroller?
+            .StartScrolling();
+    }
+
+    public void StopProgression()
+    {
+        progressionStarted = false;
+
+        terrestrialScroller?
+            .StopScrolling();
+
+        cloudSpawner?
+            .StopSpawning(
+                clearExistingClouds: true
+            );
+
         if (
-            stages == null ||
-            stages.Length == 0
+            skyProgressionCoroutine != null
         )
         {
-            return;
+            StopCoroutine(
+                skyProgressionCoroutine
+            );
+
+            skyProgressionCoroutine = null;
         }
 
-        int targetIndex =
-            FindStageIndex(score);
+        if (
+            deepSpaceCoroutine != null
+        )
+        {
+            StopCoroutine(
+                deepSpaceCoroutine
+            );
 
-        if (targetIndex == activeStageIndex)
+            deepSpaceCoroutine = null;
+        }
+
+        StopDeepSpaceParallax();
+    }
+
+    private void SubscribeToTerrestrialEvents()
+    {
+        if (terrestrialScroller == null)
         {
             return;
         }
 
-        activeStageIndex = targetIndex;
+        terrestrialScroller.BeachReached +=
+            HandleBeachReached;
 
-        ApplyStage(
-            stages[targetIndex].stageType
+        terrestrialScroller.HillsReached +=
+            HandleHillsReached;
+
+        terrestrialScroller.MountainsReached +=
+            HandleMountainsReached;
+
+        terrestrialScroller.MountainExitReached +=
+            HandleMountainExitReached;
+    }
+
+    private void ConfigureCloudRange(
+        StageType stage
+    )
+    {
+        switch (stage)
+        {
+            case StageType.Sea:
+                cloudSpawner?
+                    .SetVerticalRange(
+                        0.5f,
+                        4.2f
+                    );
+                break;
+
+            case StageType.Beach:
+                cloudSpawner?
+                    .SetVerticalRange(
+                        0.8f,
+                        4.2f
+                    );
+                break;
+
+            case StageType.Hills:
+                cloudSpawner?
+                    .SetVerticalRange(
+                        1.4f,
+                        4.2f
+                    );
+                break;
+
+            case StageType.Mountains:
+                cloudSpawner?
+                    .SetVerticalRange(
+                        2.2f,
+                        4.2f
+                    );
+                break;
+
+            case StageType.LowSky:
+            case StageType.MidSky:
+                cloudSpawner?
+                    .SetVerticalRange(
+                        -3.5f,
+                        4.2f
+                    );
+                break;
+
+            case StageType.HighSky:
+                cloudSpawner?
+                    .SetVerticalRange(
+                        -1.5f,
+                        4.2f
+                    );
+                break;
+        }
+    }
+
+    private void UnsubscribeFromTerrestrialEvents()
+    {
+        if (terrestrialScroller == null)
+        {
+            return;
+        }
+
+        terrestrialScroller.BeachReached -=
+            HandleBeachReached;
+
+        terrestrialScroller.HillsReached -=
+            HandleHillsReached;
+
+        terrestrialScroller.MountainsReached -=
+            HandleMountainsReached;
+
+        terrestrialScroller.MountainExitReached -=
+            HandleMountainExitReached;
+    }
+
+    private void HandleBeachReached()
+    {
+        SetStage(
+            StageType.Beach
         );
     }
 
-    private int FindStageIndex(int score)
+    private void HandleHillsReached()
     {
-        int result = 0;
+        SetStage(
+            StageType.Hills
+        );
+    }
 
-        for (
-            int index = 0;
-            index < stages.Length;
-            index++
+    private void HandleMountainsReached()
+    {
+        SetStage(
+            StageType.Mountains
+        );
+    }
+
+    private void HandleMountainExitReached()
+    {
+        terrestrialVerticalExitMover?
+            .BeginExit();
+
+        EnterLowSky();
+
+        if (
+            skyProgressionCoroutine != null
         )
         {
-            if (
-                score >=
-                stages[index].minimumScore
-            )
-            {
-                result = index;
-            }
+            StopCoroutine(
+                skyProgressionCoroutine
+            );
         }
 
-        return result;
+        skyProgressionCoroutine =
+            StartCoroutine(
+                RunSkyProgression()
+            );
+    }
+
+    private IEnumerator RunSkyProgression()
+    {
+        yield return
+            new WaitForSeconds(
+                lowSkyDuration
+            );
+
+        EnterMidSky();
+
+        yield return
+            new WaitForSeconds(
+                midSkyDuration
+            );
+
+        EnterHighSky();
+
+        yield return
+            new WaitForSeconds(
+                highSkyDuration
+            );
+
+        EnterDeepSpace();
+
+        skyProgressionCoroutine = null;
+    }
+
+    private void EnterLowSky()
+    {
+        SetStage(
+            StageType.LowSky
+        );
+
+        lowSkyMover?
+            .MoveToY(
+                activeSkyY
+            );
+    }
+
+    private void EnterMidSky()
+    {
+        SetStage(
+            StageType.MidSky
+        );
+
+        lowSkyMover?
+            .MoveToY(
+                exitedSkyY
+            );
+
+        midSkyMover?
+            .MoveToY(
+                activeSkyY
+            );
+    }
+
+    private void EnterHighSky()
+    {
+        SetStage(
+            StageType.HighSky
+        );
+
+        midSkyMover?
+            .MoveToY(
+                exitedSkyY
+            );
+
+        highSkyMover?
+            .MoveToY(
+                activeSkyY
+            );
+    }
+
+    private void EnterDeepSpace()
+    {
+        SetStage(
+            StageType.DeepSpace
+        );
+
+        highSkyMover?
+            .MoveToY(
+                exitedSkyY
+            );
+
+        deepSpaceMover?
+            .MoveToY(
+                activeSkyY
+            );
+
+        StartDeepSpaceParallax();
+        StartDeepSpaceChallenge();
+    }
+
+    private void StartDeepSpaceParallax()
+    {
+        if (deepSpaceParallaxLayers == null)
+        {
+            return;
+        }
+
+        foreach (
+            HorizontalParallaxMover layer
+            in deepSpaceParallaxLayers
+        )
+        {
+            if (layer != null)
+            {
+                layer.StartMoving();
+            }
+        }
+    }
+
+    private void StopDeepSpaceParallax()
+    {
+        if (deepSpaceParallaxLayers == null)
+        {
+            return;
+        }
+
+        foreach (
+            HorizontalParallaxMover layer
+            in deepSpaceParallaxLayers
+        )
+        {
+            if (layer != null)
+            {
+                layer.StopMoving();
+            }
+        }
+    }
+
+    private void StartDeepSpaceChallenge()
+    {
+        if (deepSpaceCoroutine != null)
+        {
+            StopCoroutine(
+                deepSpaceCoroutine
+            );
+        }
+
+        deepSpaceCoroutine =
+            StartCoroutine(
+                RunDeepSpaceChallenge()
+            );
+    }
+
+    private IEnumerator RunDeepSpaceChallenge()
+    {
+        yield return
+            new WaitForSeconds(
+                deepSpaceDuration
+            );
+
+        deepSpaceCoroutine = null;
+
+        if (
+            GameManager.Instance != null &&
+            GameManager.Instance.IsPlaying
+        )
+        {
+            GameManager.Instance
+                .CompleteGame();
+        }
+    }
+
+    private void SetStage(
+        StageType stage
+    )
+    {
+        if (
+            hasActiveStage &&
+            currentStage == stage
+        )
+        {
+            return;
+        }
+
+        currentStage = stage;
+        hasActiveStage = true;
+
+        ConfigureClouds(stage);
+
+        crowSpawner?
+            .SetStage(stage);
+
+        Debug.Log(
+            $"ENVIRONMENT STAGE -> {stage}"
+        );
+    }
+
+    private void ConfigureClouds(
+        StageType stage
+    )
+    {
+        ConfigureCloudRange(stage);
+
+        if (
+            stage ==
+            StageType.DeepSpace
+        )
+        {
+            cloudSpawner?
+                .SetCloudsEnabled(false);
+
+            cloudSpawner?
+                .ClearAllClouds();
+
+            return;
+        }
+
+        if (!progressionStarted)
+        {
+            cloudSpawner?
+                .SetCloudsEnabled(false);
+
+            return;
+        }
+
+        cloudSpawner?
+            .SetCloudsEnabled(true);
     }
 
     private void InitializeSkyPositions()
@@ -124,123 +539,17 @@ public sealed class BackgroundStageManager : MonoBehaviour
 
         SetLocalY(
             midSkyMover,
-            hiddenSkyY * 2f
+            hiddenSkyY
         );
 
         SetLocalY(
             highSkyMover,
-            hiddenSkyY * 3f
+            hiddenSkyY
         );
 
         SetLocalY(
             deepSpaceMover,
-            hiddenSkyY * 4f
-        );
-    }
-
-    private void ApplyStage(StageType stageType)
-    {
-        switch (stageType)
-        {
-            case StageType.Sea:
-                terrestrialStripScroller?.StartScrolling();
-
-                cloudSpawner?.SetCloudsEnabled(true);
-                cloudSpawner?.SetVerticalRange(
-                    0.5f,
-                    4.2f
-                );
-                break;
-
-            case StageType.Beach:
-                cloudSpawner?.SetCloudsEnabled(true);
-                cloudSpawner?.SetVerticalRange(
-                    0.8f,
-                    4.2f
-                );
-                break;
-
-            case StageType.Hills:
-                cloudSpawner?.SetVerticalRange(
-                    1.4f,
-                    4.2f
-                );
-                break;
-
-            case StageType.Mountains:
-                cloudSpawner?.SetVerticalRange(
-                    2.2f,
-                    4.2f
-                );
-                break;
-
-            case StageType.LowSky:
-                cloudSpawner?.SetCloudsEnabled(true);
-                cloudSpawner?.SetVerticalRange(
-                    -3.5f,
-                    4.2f
-                );
-                break;
-
-            case StageType.MidSky:
-                EnterMidSky();
-                cloudSpawner?.SetCloudsEnabled(true);
-                cloudSpawner?.SetVerticalRange(
-                    -3.5f,
-                    4.2f
-                );
-                break;
-
-            case StageType.HighSky:
-                EnterHighSky();
-                cloudSpawner?.SetCloudsEnabled(true);
-                cloudSpawner?.SetVerticalRange(
-                    -1.5f,
-                    4.2f
-                );
-                break;
-
-            case StageType.DeepSpace:
-                EnterDeepSpace();
-                cloudSpawner?.SetCloudsEnabled(false);
-                cloudSpawner?.SetVerticalRange(
-                    -1.5f,
-                    4.2f
-                );
-                break;
-        }
-    }
-
-    private void EnterMidSky()
-    {
-        lowSkyMover?.MoveToY(
-            exitedSkyY
-        );
-
-        midSkyMover?.MoveToY(
-            activeSkyY
-        );
-    }
-
-    private void EnterHighSky()
-    {
-        midSkyMover?.MoveToY(
-            exitedSkyY
-        );
-
-        highSkyMover?.MoveToY(
-            activeSkyY
-        );
-    }
-
-    private void EnterDeepSpace()
-    {
-        highSkyMover?.MoveToY(
-            exitedSkyY
-        );
-
-        deepSpaceMover?.MoveToY(
-            activeSkyY
+            hiddenSkyY
         );
     }
 
@@ -254,15 +563,12 @@ public sealed class BackgroundStageManager : MonoBehaviour
             return;
         }
 
-        Transform target =
-            mover.transform;
-
         Vector3 position =
-            target.localPosition;
+            mover.transform.localPosition;
 
         position.y = y;
 
-        target.localPosition =
+        mover.transform.localPosition =
             position;
     }
 }

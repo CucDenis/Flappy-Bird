@@ -341,55 +341,134 @@ MonoBehaviour:
   maximumSpawnY: 3.5
   firstWaveDelay: 1.5
   difficultyTiers:
-  - minimumScore: 0
-    spawnInterval: 3
+  - stage: 0
+    style: 0
+    spawnInterval: 2
     crowSpeed: 2.8
     minimumCrowsPerWave: 1
     maximumCrowsPerWave: 1
     horizontalSpacing: 1
     minimumVerticalSpacing: 1.8
-  - minimumScore: 5
-    spawnInterval: 2.6
-    crowSpeed: 3.2
+    burstChance: 1
+    burstSpeed: 2
+    burstDelay: 0
+    burstDuration: 3
+    alternatingWavesPerPhase: 2
+    fastPhaseSpeed: 4.2
+    fastPhaseSpawnInterval: 1.5
+    technicalPhaseSpawnInterval: 2
+  - stage: 1
+    style: 1
+    spawnInterval: 1.4
+    crowSpeed: 4.1
+    minimumCrowsPerWave: 1
+    maximumCrowsPerWave: 2
+    horizontalSpacing: 1
+    minimumVerticalSpacing: 1.8
+    burstChance: 0
+    burstSpeed: 0.1
+    burstDelay: 0
+    burstDuration: 0
+    alternatingWavesPerPhase: 5
+    fastPhaseSpeed: 4.2
+    fastPhaseSpawnInterval: 1.5
+    technicalPhaseSpawnInterval: 1
+  - stage: 2
+    style: 2
+    spawnInterval: 2.2
+    crowSpeed: 3
+    minimumCrowsPerWave: 3
+    maximumCrowsPerWave: 4
+    horizontalSpacing: 1.2
+    minimumVerticalSpacing: 1.8
+    burstChance: 0
+    burstSpeed: 0.1
+    burstDelay: 0
+    burstDuration: 0
+    alternatingWavesPerPhase: 2
+    fastPhaseSpeed: 4.2
+    fastPhaseSpawnInterval: 1.5
+    technicalPhaseSpawnInterval: 2
+  - stage: 3
+    style: 3
+    spawnInterval: 2
+    crowSpeed: 2.9
+    minimumCrowsPerWave: 3
+    maximumCrowsPerWave: 4
+    horizontalSpacing: 1.3
+    minimumVerticalSpacing: 1.8
+    burstChance: 1
+    burstSpeed: 4.2
+    burstDelay: 0.7
+    burstDuration: 0.6
+    alternatingWavesPerPhase: 6
+    fastPhaseSpeed: 4.2
+    fastPhaseSpawnInterval: 1.5
+    technicalPhaseSpawnInterval: 0.8
+  - stage: 4
+    style: 1
+    spawnInterval: 1
+    crowSpeed: 4.5
     minimumCrowsPerWave: 1
     maximumCrowsPerWave: 1
     horizontalSpacing: 1
     minimumVerticalSpacing: 1.8
-  - minimumScore: 10
-    spawnInterval: 2.2
-    crowSpeed: 3.6
-    minimumCrowsPerWave: 1
-    maximumCrowsPerWave: 2
-    horizontalSpacing: 1.2
-    minimumVerticalSpacing: 1.8
-  - minimumScore: 20
-    spawnInterval: 1.8
+    burstChance: 0
+    burstSpeed: 0.1
+    burstDelay: 0
+    burstDuration: 0
+    alternatingWavesPerPhase: 2
+    fastPhaseSpeed: 4.2
+    fastPhaseSpawnInterval: 1.5
+    technicalPhaseSpawnInterval: 2
+  - stage: 5
+    style: 2
+    spawnInterval: 0.8
     crowSpeed: 4
-    minimumCrowsPerWave: 1
-    maximumCrowsPerWave: 2
-    horizontalSpacing: 1.3
-    minimumVerticalSpacing: 1.8
-  - minimumScore: 35
-    spawnInterval: 1.5
-    crowSpeed: 4.5
-    minimumCrowsPerWave: 2
-    maximumCrowsPerWave: 3
-    horizontalSpacing: 1.4
-    minimumVerticalSpacing: 1.8
-  - minimumScore: 50
-    spawnInterval: 1.25
-    crowSpeed: 5
-    minimumCrowsPerWave: 2
+    minimumCrowsPerWave: 3
     maximumCrowsPerWave: 3
     horizontalSpacing: 1.5
     minimumVerticalSpacing: 1.8
-  - minimumScore: 75
-    spawnInterval: 1
-    crowSpeed: 5.5
+    burstChance: 1
+    burstSpeed: 0.1
+    burstDelay: 4
+    burstDuration: 0
+    alternatingWavesPerPhase: 7
+    fastPhaseSpeed: 4.2
+    fastPhaseSpawnInterval: 0.9
+    technicalPhaseSpawnInterval: 1
+  - stage: 6
+    style: 4
+    spawnInterval: 0.7
+    crowSpeed: 4.8
     minimumCrowsPerWave: 2
     maximumCrowsPerWave: 4
     horizontalSpacing: 1.6
     minimumVerticalSpacing: 1.8
+    burstChance: 0
+    burstSpeed: 0.1
+    burstDelay: 0
+    burstDuration: 0
+    alternatingWavesPerPhase: 2
+    fastPhaseSpeed: 4.2
+    fastPhaseSpawnInterval: 1.5
+    technicalPhaseSpawnInterval: 2
+  - stage: 7
+    style: 5
+    spawnInterval: 0.4
+    crowSpeed: 5
+    minimumCrowsPerWave: 1
+    maximumCrowsPerWave: 8
+    horizontalSpacing: 0.9
+    minimumVerticalSpacing: 1
+    burstChance: 1
+    burstSpeed: 5
+    burstDelay: 0
+    burstDuration: 0
+    alternatingWavesPerPhase: 7
+    fastPhaseSpeed: 5.1
+    fastPhaseSpawnInterval: 2
+    technicalPhaseSpawnInterval: 0.9
 --- !u!1 &86183430
 GameObject:
   m_ObjectHideFlags: 0
@@ -699,7 +778,6 @@ MonoBehaviour:
   gameOverPanel: {fileID: 1925456942}
   scoreText: {fileID: 602309896}
   finalScoreText: {fileID: 1812038522}
-  completionScore: 221
 --- !u!4 &146079063
 Transform:
   m_ObjectHideFlags: 0
@@ -1585,6 +1663,38 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 410521695}
   m_CullTransparentMesh: 1
+--- !u!1 &410756069
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 410756070}
+  m_Layer: 0
+  m_Name: BackgroundWorld
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &410756070
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 410756069}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 856851216}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &413314531
 GameObject:
   m_ObjectHideFlags: 0
@@ -2235,7 +2345,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 693450610}
-  - {fileID: 2067774586}
   - {fileID: 935506591}
   - {fileID: 1943706641}
   - {fileID: 696903006}
@@ -2880,6 +2989,7 @@ GameObject:
   m_Component:
   - component: {fileID: 693450610}
   - component: {fileID: 693450611}
+  - component: {fileID: 693450612}
   m_Layer: 0
   m_Name: TerrestrialStrip
   m_TagString: Untagged
@@ -2923,8 +3033,25 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnvironmentHorizontalScroller
   speed: 0.1
-  entryX: 3.5
-  disableWhenOffscreen: 1
+  stageTriggerLine: {fileID: 856851216}
+  beachStageMarker: {fileID: 1139316268}
+  hillsStageMarker: {fileID: 453058326}
+  mountainsStageMarker: {fileID: 1846721692}
+  mountainExitMarker: {fileID: 723445880}
+--- !u!114 &693450612
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 693450609}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92b292202288043b9964a6b61a1e263c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TerrestrialVerticalExitMover
+  exitDistance: 10
+  exitDuration: 4
 --- !u!1 &696903005
 GameObject:
   m_ObjectHideFlags: 0
@@ -3134,7 +3261,7 @@ Transform:
   m_GameObject: {fileID: 723445879}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 38.4375, y: 0, z: 0}
+  m_LocalPosition: {x: 36.4375, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3242,6 +3369,37 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: -32}
   m_SizeDelta: {x: 240, y: 80}
   m_Pivot: {x: 0.5, y: 1}
+--- !u!1 &856851215
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 856851216}
+  m_Layer: 0
+  m_Name: StageTriggerLine
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &856851216
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 856851215}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.31, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 410756070}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &904952297
 GameObject:
   m_ObjectHideFlags: 0
@@ -4027,32 +4185,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 73c0b8dc443fb4a479ba17fa0314b4ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BackgroundStageManager
+  terrestrialScroller: {fileID: 693450611}
+  terrestrialVerticalExitMover: {fileID: 693450612}
   cloudSpawner: {fileID: 1202822004}
-  terrestrialStripScroller: {fileID: 693450611}
-  lowSkyMover: {fileID: 2067774587}
+  crowSpawner: {fileID: 73269345}
+  lowSkyMover: {fileID: 1987177367}
   midSkyMover: {fileID: 935506592}
   highSkyMover: {fileID: 1943706642}
   deepSpaceMover: {fileID: 696903007}
-  stages:
-  - stageType: 0
-    minimumScore: 0
-  - stageType: 1
-    minimumScore: 3
-  - stageType: 2
-    minimumScore: 8
-  - stageType: 3
-    minimumScore: 15
-  - stageType: 4
-    minimumScore: 25
-  - stageType: 5
-    minimumScore: 40
-  - stageType: 6
-    minimumScore: 60
-  - stageType: 7
-    minimumScore: 85
   hiddenSkyY: 10
   activeSkyY: 0
   exitedSkyY: -10
+  lowSkyDuration: 20
+  midSkyDuration: 20
+  highSkyDuration: 20
+  deepSpaceParallaxLayers: []
+  deepSpaceDuration: 120
 --- !u!4 &1157359585
 Transform:
   m_ObjectHideFlags: 0
@@ -7938,51 +8086,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2036950537}
   m_CullTransparentMesh: 1
---- !u!1 &2067774585
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2067774586}
-  - component: {fileID: 2067774587}
-  m_Layer: 0
-  m_Name: LowerSkyZone
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2067774586
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2067774585}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 516821187}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2067774587
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2067774585}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5383ab853ff8440d9adce71f3324e743, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SkyBackdropMover
-  transitionDuration: 4
 --- !u!1 &2129817293
 GameObject:
   m_ObjectHideFlags: 0
@@ -8142,3 +8245,4 @@ SceneRoots:
   - {fileID: 1417091930}
   - {fileID: 1922966645}
   - {fileID: 732020591}
+  - {fileID: 410756070}

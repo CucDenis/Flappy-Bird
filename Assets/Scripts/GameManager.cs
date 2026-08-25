@@ -34,9 +34,6 @@ public sealed class GameManager : MonoBehaviour
     [SerializeField] private TMP_Text scoreText;
     [SerializeField] private TMP_Text finalScoreText;
 
-    [Header("Completion")]
-    [SerializeField] private int completionScore = 8;
-
     public GameState CurrentState { get; private set; }
     public int Score { get; private set; }
 
@@ -125,9 +122,16 @@ public sealed class GameManager : MonoBehaviour
             bird.BeginGame();
         }
 
+        if (backgroundStageManager != null)
+        {
+            backgroundStageManager
+                .BeginProgression();
+        }
+
         StartCoroutine(
             BeginEnemySpawningAfterIntro()
         );
+
     }
 
     public void AddScore(int amount)
@@ -140,23 +144,6 @@ public sealed class GameManager : MonoBehaviour
         Score += amount;
 
         UpdateScoreUI();
-
-        if (crowSpawner != null)
-        {
-            crowSpawner.HandleScoreChanged(Score);
-        }
-
-        if (backgroundStageManager != null)
-        {
-            backgroundStageManager.HandleScoreChanged(
-                Score
-            );
-        }
-
-        if (Score >= completionScore)
-        {
-            CompleteGame();
-        }
         
     }
 
@@ -210,6 +197,12 @@ public sealed class GameManager : MonoBehaviour
 
         CurrentState = GameState.GameOver;
 
+        if (backgroundStageManager != null)
+        {
+            backgroundStageManager
+                .StopProgression();
+        }
+
         if (crowSpawner != null)
         {
             crowSpawner.StopSpawning();
@@ -250,7 +243,7 @@ public sealed class GameManager : MonoBehaviour
         }
     }
 
-    private void CompleteGame()
+    public void CompleteGame()
     {
         if (
             CurrentState !=
@@ -260,8 +253,13 @@ public sealed class GameManager : MonoBehaviour
             return;
         }
 
-        CurrentState =
-            GameState.Completed;
+        CurrentState = GameState.Completed;
+
+        if (backgroundStageManager != null)
+        {
+            backgroundStageManager
+                .StopProgression();
+        }
 
         if (crowSpawner != null)
         {

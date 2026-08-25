@@ -5,14 +5,36 @@ using UnityEngine;
 
 public sealed class CrowSpawner : MonoBehaviour
 {
+    public enum DifficultyStyle
+    {
+        Easy,
+        Fast,
+        Technical,
+        BurstTechnical,
+        Alternating,
+        DeepSpace
+    }
+
+    private enum TechnicalFormation
+    {
+        HighLow,
+        LowHigh,
+        WideGate,
+        OffsetPair,
+        RisingSteps,
+        FallingSteps
+    }
+
     [Serializable]
     public sealed class DifficultyTier
     {
-        [Min(0)]
-        public int minimumScore;
+        public BackgroundStageManager.StageType stage;
 
+        public DifficultyStyle style;
+
+        [Header("Base")]
         [Min(0.1f)]
-        public float spawnInterval = 3f;
+        public float spawnInterval = 2.5f;
 
         [Min(0.1f)]
         public float crowSpeed = 3f;
@@ -24,48 +46,99 @@ public sealed class CrowSpawner : MonoBehaviour
         public int maximumCrowsPerWave = 1;
 
         [Min(0f)]
-        public float horizontalSpacing = 0.8f;
+        public float horizontalSpacing = 1.2f;
 
         [Min(0f)]
-        public float minimumVerticalSpacing = 2f;
+        public float minimumVerticalSpacing = 1.8f;
+
+        [Header("Burst")]
+        [Range(0f, 1f)]
+        public float burstChance = 0f;
+
+        [Min(0.1f)]
+        public float burstSpeed = 4f;
+
+        [Min(0f)]
+        public float burstDelay = 0.7f;
+
+        [Min(0f)]
+        public float burstDuration = 0.6f;
+
+        [Header("Alternating")]
+        [Min(1)]
+        public int alternatingWavesPerPhase = 2;
+
+        [Min(0.1f)]
+        public float fastPhaseSpeed = 4.2f;
+
+        [Min(0.1f)]
+        public float fastPhaseSpawnInterval = 1.5f;
+
+        [Min(0.1f)]
+        public float technicalPhaseSpawnInterval = 2f;
     }
 
     [Header("References")]
-    [SerializeField] private EnemyCrow crowPrefab;
-    [SerializeField] private Transform player;
+    [SerializeField]
+    private EnemyCrow crowPrefab;
+
+    [SerializeField]
+    private Transform player;
 
     [Header("Spawn Area")]
-    [SerializeField] private float spawnX = 8f;
-    [SerializeField] private float minimumSpawnY = -3.5f;
-    [SerializeField] private float maximumSpawnY = 3.5f;
+    [SerializeField]
+    private float spawnX = 8f;
+
+    [SerializeField]
+    private float minimumSpawnY = -3.5f;
+
+    [SerializeField]
+    private float maximumSpawnY = 3.5f;
 
     [Header("Timing")]
-    [SerializeField] private float firstWaveDelay = 1.5f;
+    [SerializeField]
+    private float firstWaveDelay = 1.5f;
 
     [Header("Difficulty")]
     [SerializeField]
     private List<DifficultyTier> difficultyTiers = new();
 
     private Coroutine spawningCoroutine;
+
     private DifficultyTier currentTier;
+
+    private bool alternatingFastPhase = true;
+
+    private int alternatingWavesRemaining = 2;
+
+    private int deepSpacePatternIndex;
 
     private void Awake()
     {
         ValidateDifficultyTiers();
-        currentTier = GetTierForScore(0);
+
+        currentTier =
+            GetTierForStage(
+                BackgroundStageManager.StageType.Sea
+            );
     }
 
     public void BeginSpawning()
     {
         StopSpawning();
 
-        currentTier = GetTierForScore(
-            GameManager.Instance != null
-                ? GameManager.Instance.Score
-                : 0
-        );
+        if (currentTier == null)
+        {
+            currentTier =
+                GetTierForStage(
+                    BackgroundStageManager.StageType.Sea
+                );
+        }
 
-        spawningCoroutine = StartCoroutine(SpawnLoop());
+        spawningCoroutine =
+            StartCoroutine(
+                SpawnLoop()
+            );
     }
 
     public void StopSpawning()
@@ -75,185 +148,897 @@ public sealed class CrowSpawner : MonoBehaviour
             return;
         }
 
-        StopCoroutine(spawningCoroutine);
+        StopCoroutine(
+            spawningCoroutine
+        );
+
         spawningCoroutine = null;
     }
 
-    public void HandleScoreChanged(int score)
+    public void SetStage(
+        BackgroundStageManager.StageType stage
+    )
     {
-        currentTier = GetTierForScore(score);
+        DifficultyTier tier =
+            GetTierForStage(stage);
+
+        if (tier == null)
+        {
+            Debug.LogWarning(
+                $"No CrowSpawner tier configured for {stage}."
+            );
+
+            return;
+        }
+
+        currentTier = tier;
+
+        if (
+            currentTier.style ==
+            DifficultyStyle.Alternating
+        )
+        {
+            alternatingFastPhase = true;
+
+            alternatingWavesRemaining =
+                Mathf.Max(
+                    1,
+                    currentTier.alternatingWavesPerPhase
+                );
+        }
+
+        if (
+            stage ==
+            BackgroundStageManager.StageType.DeepSpace
+        )
+        {
+            deepSpacePatternIndex = 0;
+        }
+
+        Debug.Log(
+            $"CROW DIFFICULTY -> {stage} / {currentTier.style}"
+        );
     }
 
     private IEnumerator SpawnLoop()
     {
-        yield return new WaitForSeconds(firstWaveDelay);
+        yield return
+            new WaitForSeconds(
+                firstWaveDelay
+            );
 
         while (
             GameManager.Instance != null &&
             GameManager.Instance.IsPlaying
         )
         {
+            float interval =
+                GetCurrentSpawnInterval();
+
             SpawnWave();
 
-            float interval = currentTier != null
-                ? currentTier.spawnInterval
-                : 3f;
-
-            yield return new WaitForSeconds(interval);
+            yield return
+                new WaitForSeconds(
+                    interval
+                );
         }
 
         spawningCoroutine = null;
     }
 
+    private float GetCurrentSpawnInterval()
+    {
+        if (currentTier == null)
+        {
+            return 3f;
+        }
+
+        if (
+            currentTier.style ==
+            DifficultyStyle.Alternating
+        )
+        {
+            return alternatingFastPhase
+                ? currentTier.fastPhaseSpawnInterval
+                : currentTier.technicalPhaseSpawnInterval;
+        }
+
+        if (
+            currentTier.style ==
+            DifficultyStyle.DeepSpace
+        )
+        {
+            return GetDeepSpaceSpawnInterval();
+        }
+
+        return currentTier.spawnInterval;
+    }
+
+    private float GetDeepSpaceSpawnInterval()
+    {
+        int pattern =
+            deepSpacePatternIndex % 6;
+
+        switch (pattern)
+        {
+            case 0:
+                return 1.6f;
+
+            case 1:
+                return 2.1f;
+
+            case 2:
+                return 1.8f;
+
+            case 3:
+                return 1.6f;
+
+            case 4:
+                return 2.4f;
+
+            case 5:
+                return 2.6f;
+
+            default:
+                return 2f;
+        }
+    }
+
     private void SpawnWave()
     {
-        if (crowPrefab == null || player == null || currentTier == null)
+        if (
+            crowPrefab == null ||
+            player == null ||
+            currentTier == null
+        )
         {
             return;
         }
 
-        int minimumCount = Mathf.Max(
-            1,
-            currentTier.minimumCrowsPerWave
-        );
-
-        int maximumCount = Mathf.Max(
-            minimumCount,
-            currentTier.maximumCrowsPerWave
-        );
-
-        int requestedCrowCount = UnityEngine.Random.Range(
-            minimumCount,
-            maximumCount + 1
-        );
-
-        List<float> usedYPositions = new();
-
-        for (int index = 0; index < requestedCrowCount; index++)
+        switch (currentTier.style)
         {
-            if (
-                !TryFindValidY(
-                    usedYPositions,
-                    currentTier.minimumVerticalSpacing,
-                    out float spawnY
-                )
-            )
-            {
-                // Spawn fewer crows instead of an impossible formation.
+            case DifficultyStyle.Easy:
+                SpawnEasyWave();
                 break;
-            }
 
-            usedYPositions.Add(spawnY);
+            case DifficultyStyle.Fast:
+                SpawnFastWave();
+                break;
 
-            float crowX =
-                spawnX +
-                index * currentTier.horizontalSpacing;
+            case DifficultyStyle.Technical:
+                SpawnTechnicalWave();
+                break;
 
-            EnemyCrow crow = Instantiate(
+            case DifficultyStyle.BurstTechnical:
+                SpawnBurstTechnicalWave();
+                break;
+
+            case DifficultyStyle.Alternating:
+                SpawnAlternatingWave();
+                break;
+
+            case DifficultyStyle.DeepSpace:
+                SpawnDeepSpaceWave();
+                break;
+        }
+    }
+
+    private EnemyCrow SpawnCrow(
+        float x,
+        float y,
+        float speed,
+        bool allowBurst = false
+    )
+    {
+        EnemyCrow crow =
+            Instantiate(
                 crowPrefab,
-                new Vector3(crowX, spawnY, 0f),
+                new Vector3(
+                    x,
+                    y,
+                    0f
+                ),
                 Quaternion.identity
             );
 
-            crow.Initialize(
-                currentTier.crowSpeed,
-                player
+        crow.Initialize(
+            speed,
+            player
+        );
+
+        if (allowBurst)
+        {
+            TryConfigureBurst(
+                crow
             );
+        }
+
+        return crow;
+    }
+
+    private void SpawnEasyWave()
+    {
+        float y =
+            UnityEngine.Random.Range(
+                minimumSpawnY + 0.5f,
+                maximumSpawnY - 0.5f
+            );
+
+        SpawnCrow(
+            spawnX,
+            y,
+            currentTier.crowSpeed
+        );
+    }
+
+    private void SpawnFastWave()
+    {
+        float y =
+            UnityEngine.Random.Range(
+                minimumSpawnY + 0.35f,
+                maximumSpawnY - 0.35f
+            );
+
+        SpawnCrow(
+            spawnX,
+            y,
+            currentTier.crowSpeed
+        );
+    }
+
+    private void SpawnTechnicalWave()
+    {
+        TechnicalFormation formation =
+            GetRandomTechnicalFormation();
+
+        SpawnTechnicalFormation(
+            formation,
+            currentTier.crowSpeed,
+            false
+        );
+    }
+
+    private void SpawnBurstTechnicalWave()
+    {
+        TechnicalFormation formation =
+            GetRandomMountainFormation();
+
+        SpawnTechnicalFormation(
+            formation,
+            currentTier.crowSpeed,
+            true
+        );
+    }
+
+    private TechnicalFormation
+        GetRandomTechnicalFormation()
+    {
+        if (currentTier == null)
+        {
+            return TechnicalFormation.HighLow;
+        }
+
+        switch (currentTier.stage)
+        {
+            case BackgroundStageManager.StageType.Hills:
+                return GetRandomHillsFormation();
+
+            case BackgroundStageManager.StageType.Mountains:
+                return GetRandomMountainFormation();
+
+            case BackgroundStageManager.StageType.MidSky:
+                return GetRandomMidSkyFormation();
+
+            case BackgroundStageManager.StageType.HighSky:
+                return GetRandomMidSkyFormation();
+
+            default:
+                return GetRandomBasicTechnicalFormation();
         }
     }
 
-    private bool TryFindValidY(
-        IReadOnlyList<float> usedPositions,
-        float minimumSpacing,
-        out float result
+    private TechnicalFormation
+        GetRandomBasicTechnicalFormation()
+    {
+        int index =
+            UnityEngine.Random.Range(
+                0,
+                3
+            );
+
+        switch (index)
+        {
+            case 0:
+                return TechnicalFormation.HighLow;
+
+            case 1:
+                return TechnicalFormation.LowHigh;
+
+            default:
+                return TechnicalFormation.WideGate;
+        }
+    }
+
+    private TechnicalFormation
+        GetRandomHillsFormation()
+    {
+        int index =
+            UnityEngine.Random.Range(
+                0,
+                4
+            );
+
+        switch (index)
+        {
+            case 0:
+                return TechnicalFormation.HighLow;
+
+            case 1:
+                return TechnicalFormation.LowHigh;
+
+            case 2:
+                return TechnicalFormation.WideGate;
+
+            default:
+                return TechnicalFormation.OffsetPair;
+        }
+    }
+
+    private TechnicalFormation
+        GetRandomMountainFormation()
+    {
+        int index =
+            UnityEngine.Random.Range(
+                0,
+                5
+            );
+
+        switch (index)
+        {
+            case 0:
+                return TechnicalFormation.HighLow;
+
+            case 1:
+                return TechnicalFormation.LowHigh;
+
+            case 2:
+                return TechnicalFormation.OffsetPair;
+
+            case 3:
+                return TechnicalFormation.RisingSteps;
+
+            default:
+                return TechnicalFormation.FallingSteps;
+        }
+    }
+
+    private TechnicalFormation
+        GetRandomMidSkyFormation()
+    {
+        int index =
+            UnityEngine.Random.Range(
+                0,
+                6
+            );
+
+        switch (index)
+        {
+            case 0:
+                return TechnicalFormation.HighLow;
+
+            case 1:
+                return TechnicalFormation.LowHigh;
+
+            case 2:
+                return TechnicalFormation.WideGate;
+
+            case 3:
+                return TechnicalFormation.OffsetPair;
+
+            case 4:
+                return TechnicalFormation.RisingSteps;
+
+            default:
+                return TechnicalFormation.FallingSteps;
+        }
+    }
+
+    private void SpawnTechnicalFormation(
+        TechnicalFormation formation,
+        float speed,
+        bool allowBurst
     )
     {
-        const int maximumAttempts = 20;
-
-        for (int attempt = 0; attempt < maximumAttempts; attempt++)
-        {
-            float candidate = UnityEngine.Random.Range(
-                minimumSpawnY,
-                maximumSpawnY
+        float upperY =
+            Mathf.Lerp(
+                0f,
+                maximumSpawnY,
+                0.75f
             );
 
-            bool valid = true;
+        float lowerY =
+            Mathf.Lerp(
+                0f,
+                minimumSpawnY,
+                0.75f
+            );
 
-            for (int index = 0; index < usedPositions.Count; index++)
-            {
-                float distance = Mathf.Abs(
-                    candidate - usedPositions[index]
+        float middleUpperY =
+            Mathf.Lerp(
+                0f,
+                maximumSpawnY,
+                0.4f
+            );
+
+        float middleLowerY =
+            Mathf.Lerp(
+                0f,
+                minimumSpawnY,
+                0.4f
+            );
+
+        float spacing =
+            Mathf.Max(
+                1.2f,
+                currentTier.horizontalSpacing
+            );
+
+        switch (formation)
+        {
+            case TechnicalFormation.HighLow:
+                SpawnCrow(
+                    spawnX,
+                    upperY,
+                    speed,
+                    allowBurst
                 );
 
-                if (distance < minimumSpacing)
-                {
-                    valid = false;
-                    break;
-                }
-            }
+                SpawnCrow(
+                    spawnX + spacing,
+                    lowerY,
+                    speed,
+                    allowBurst
+                );
+                break;
 
-            if (valid)
-            {
-                result = candidate;
-                return true;
-            }
+            case TechnicalFormation.LowHigh:
+                SpawnCrow(
+                    spawnX,
+                    lowerY,
+                    speed,
+                    allowBurst
+                );
+
+                SpawnCrow(
+                    spawnX + spacing,
+                    upperY,
+                    speed,
+                    allowBurst
+                );
+                break;
+
+            case TechnicalFormation.WideGate:
+                SpawnCrow(
+                    spawnX,
+                    upperY,
+                    speed,
+                    allowBurst
+                );
+
+                SpawnCrow(
+                    spawnX,
+                    lowerY,
+                    speed,
+                    allowBurst
+                );
+                break;
+
+            case TechnicalFormation.OffsetPair:
+                SpawnCrow(
+                    spawnX,
+                    middleUpperY,
+                    speed,
+                    allowBurst
+                );
+
+                SpawnCrow(
+                    spawnX + spacing,
+                    middleLowerY,
+                    speed,
+                    allowBurst
+                );
+                break;
+
+            case TechnicalFormation.RisingSteps:
+                SpawnCrow(
+                    spawnX,
+                    lowerY,
+                    speed,
+                    allowBurst
+                );
+
+                SpawnCrow(
+                    spawnX + spacing,
+                    middleLowerY,
+                    speed,
+                    allowBurst
+                );
+
+                SpawnCrow(
+                    spawnX +
+                    spacing * 2f,
+                    middleUpperY,
+                    speed,
+                    allowBurst
+                );
+                break;
+
+            case TechnicalFormation.FallingSteps:
+                SpawnCrow(
+                    spawnX,
+                    upperY,
+                    speed,
+                    allowBurst
+                );
+
+                SpawnCrow(
+                    spawnX + spacing,
+                    middleUpperY,
+                    speed,
+                    allowBurst
+                );
+
+                SpawnCrow(
+                    spawnX +
+                    spacing * 2f,
+                    middleLowerY,
+                    speed,
+                    allowBurst
+                );
+                break;
         }
-
-        result = 0f;
-        return false;
     }
 
-    private DifficultyTier GetTierForScore(int score)
+    private void TryConfigureBurst(
+        EnemyCrow crow
+    )
     {
-        if (difficultyTiers == null || difficultyTiers.Count == 0)
+        if (
+            crow == null ||
+            currentTier == null
+        )
+        {
+            return;
+        }
+
+        if (
+            currentTier.burstChance <= 0f
+        )
+        {
+            return;
+        }
+
+        if (
+            UnityEngine.Random.value >
+            currentTier.burstChance
+        )
+        {
+            return;
+        }
+
+        crow.ConfigureBurst(
+            currentTier.burstSpeed,
+            currentTier.burstDelay,
+            currentTier.burstDuration
+        );
+    }
+
+    private void SpawnAlternatingWave()
+    {
+        if (alternatingFastPhase)
+        {
+            SpawnAlternatingFastWave();
+        }
+        else
+        {
+            SpawnAlternatingTechnicalWave();
+        }
+
+        alternatingWavesRemaining--;
+
+        if (
+            alternatingWavesRemaining <= 0
+        )
+        {
+            alternatingFastPhase =
+                !alternatingFastPhase;
+
+            alternatingWavesRemaining =
+                Mathf.Max(
+                    1,
+                    currentTier.alternatingWavesPerPhase
+                );
+        }
+    }
+
+    private void SpawnAlternatingFastWave()
+    {
+        float y =
+            UnityEngine.Random.Range(
+                minimumSpawnY + 0.35f,
+                maximumSpawnY - 0.35f
+            );
+
+        SpawnCrow(
+            spawnX,
+            y,
+            currentTier.fastPhaseSpeed
+        );
+    }
+
+    private void SpawnAlternatingTechnicalWave()
+    {
+        TechnicalFormation formation =
+            GetRandomMidSkyFormation();
+
+        SpawnTechnicalFormation(
+            formation,
+            currentTier.crowSpeed,
+            false
+        );
+    }
+
+    private void SpawnDeepSpaceWave()
+    {
+        switch (
+            deepSpacePatternIndex % 6
+        )
+        {
+            case 0:
+                SpawnDeepSpaceFast();
+                break;
+
+            case 1:
+                SpawnDeepSpaceTechnical();
+                break;
+
+            case 2:
+                SpawnDeepSpaceBurst();
+                break;
+
+            case 3:
+                SpawnDeepSpaceFast();
+                break;
+
+            case 4:
+                SpawnDeepSpaceHardTechnical();
+                break;
+
+            case 5:
+                SpawnDeepSpaceRecovery();
+                break;
+        }
+
+        deepSpacePatternIndex++;
+    }
+
+    private void SpawnDeepSpaceFast()
+    {
+        float y =
+            UnityEngine.Random.Range(
+                minimumSpawnY + 0.5f,
+                maximumSpawnY - 0.5f
+            );
+
+        SpawnCrow(
+            spawnX,
+            y,
+            4.2f
+        );
+    }
+
+    private void SpawnDeepSpaceTechnical()
+    {
+        TechnicalFormation formation =
+            UnityEngine.Random.value > 0.5f
+                ? TechnicalFormation.HighLow
+                : TechnicalFormation.LowHigh;
+
+        SpawnTechnicalFormation(
+            formation,
+            3.4f,
+            false
+        );
+    }
+
+    private void SpawnDeepSpaceBurst()
+    {
+        float y =
+            UnityEngine.Random.Range(
+                minimumSpawnY + 0.6f,
+                maximumSpawnY - 0.6f
+            );
+
+        EnemyCrow crow =
+            SpawnCrow(
+                spawnX,
+                y,
+                currentTier.crowSpeed
+            );
+
+        if (crow != null)
+        {
+            crow.ConfigureBurst(
+                currentTier.burstSpeed,
+                currentTier.burstDelay,
+                currentTier.burstDuration
+            );
+        }
+    }
+
+    private void SpawnDeepSpaceHardTechnical()
+    {
+        TechnicalFormation formation =
+            UnityEngine.Random.value > 0.5f
+                ? TechnicalFormation.RisingSteps
+                : TechnicalFormation.FallingSteps;
+
+        SpawnTechnicalFormation(
+            formation,
+            3.3f,
+            false
+        );
+    }
+
+    private void SpawnDeepSpaceRecovery()
+    {
+        float safeY =
+            UnityEngine.Random.Range(
+                -1.5f,
+                1.5f
+            );
+
+        SpawnCrow(
+            spawnX,
+            safeY,
+            3.0f
+        );
+    }
+
+    private DifficultyTier GetTierForStage(
+        BackgroundStageManager.StageType stage
+    )
+    {
+        if (
+            difficultyTiers == null ||
+            difficultyTiers.Count == 0
+        )
         {
             return null;
         }
 
-        DifficultyTier selectedTier = difficultyTiers[0];
-
-        for (int index = 0; index < difficultyTiers.Count; index++)
+        for (
+            int index = 0;
+            index < difficultyTiers.Count;
+            index++
+        )
         {
-            DifficultyTier tier = difficultyTiers[index];
+            DifficultyTier tier =
+                difficultyTiers[index];
 
-            if (score >= tier.minimumScore)
+            if (tier.stage == stage)
             {
-                selectedTier = tier;
-            }
-            else
-            {
-                break;
+                return tier;
             }
         }
 
-        return selectedTier;
+        return null;
     }
 
     private void ValidateDifficultyTiers()
     {
         if (difficultyTiers == null)
         {
-            difficultyTiers = new List<DifficultyTier>();
+            difficultyTiers =
+                new List<DifficultyTier>();
         }
 
-        difficultyTiers.Sort(
-            (left, right) =>
-                left.minimumScore.CompareTo(right.minimumScore)
-        );
-
-        for (int index = 0; index < difficultyTiers.Count; index++)
+        for (
+            int index = 0;
+            index < difficultyTiers.Count;
+            index++
+        )
         {
-            DifficultyTier tier = difficultyTiers[index];
+            DifficultyTier tier =
+                difficultyTiers[index];
 
-            tier.minimumCrowsPerWave = Mathf.Max(
-                1,
-                tier.minimumCrowsPerWave
-            );
+            if (tier == null)
+            {
+                continue;
+            }
 
-            tier.maximumCrowsPerWave = Mathf.Max(
-                tier.minimumCrowsPerWave,
-                tier.maximumCrowsPerWave
-            );
+            tier.spawnInterval =
+                Mathf.Max(
+                    0.1f,
+                    tier.spawnInterval
+                );
+
+            tier.crowSpeed =
+                Mathf.Max(
+                    0.1f,
+                    tier.crowSpeed
+                );
+
+            tier.minimumCrowsPerWave =
+                Mathf.Max(
+                    1,
+                    tier.minimumCrowsPerWave
+                );
+
+            tier.maximumCrowsPerWave =
+                Mathf.Max(
+                    tier.minimumCrowsPerWave,
+                    tier.maximumCrowsPerWave
+                );
+
+            tier.horizontalSpacing =
+                Mathf.Max(
+                    0f,
+                    tier.horizontalSpacing
+                );
+
+            tier.minimumVerticalSpacing =
+                Mathf.Max(
+                    0f,
+                    tier.minimumVerticalSpacing
+                );
+
+            tier.burstChance =
+                Mathf.Clamp01(
+                    tier.burstChance
+                );
+
+            tier.burstSpeed =
+                Mathf.Max(
+                    0.1f,
+                    tier.burstSpeed
+                );
+
+            tier.burstDelay =
+                Mathf.Max(
+                    0f,
+                    tier.burstDelay
+                );
+
+            tier.burstDuration =
+                Mathf.Max(
+                    0f,
+                    tier.burstDuration
+                );
+
+            tier.alternatingWavesPerPhase =
+                Mathf.Max(
+                    1,
+                    tier.alternatingWavesPerPhase
+                );
+
+            tier.fastPhaseSpeed =
+                Mathf.Max(
+                    0.1f,
+                    tier.fastPhaseSpeed
+                );
+
+            tier.fastPhaseSpawnInterval =
+                Mathf.Max(
+                    0.1f,
+                    tier.fastPhaseSpawnInterval
+                );
+
+            tier.technicalPhaseSpawnInterval =
+                Mathf.Max(
+                    0.1f,
+                    tier.technicalPhaseSpawnInterval
+                );
         }
     }
 
