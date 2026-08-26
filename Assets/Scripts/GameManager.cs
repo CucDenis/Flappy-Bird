@@ -30,6 +30,8 @@ public sealed class GameManager : MonoBehaviour
     [SerializeField] private GameObject hudPanel;
     [SerializeField] private GameObject pausePanel;
     [SerializeField] private GameObject gameOverPanel;
+    [SerializeField] private GameObject helpPanel;
+    [SerializeField] private GameObject settingsPanel;
 
     [Header("Score UI")]
     [SerializeField] private TMP_Text scoreText;
@@ -82,6 +84,8 @@ public sealed class GameManager : MonoBehaviour
         SetPanelActive(hudPanel, false);
         SetPanelActive(pausePanel, false);
         SetPanelActive(gameOverPanel, false);
+        SetPanelActive(helpPanel, false);
+        SetPanelActive(settingsPanel, false);
     }
 
     private IEnumerator BeginEnemySpawningAfterIntro()
@@ -117,6 +121,8 @@ public sealed class GameManager : MonoBehaviour
         SetPanelActive(hudPanel, true);
         SetPanelActive(pausePanel, false);
         SetPanelActive(gameOverPanel, false);
+        SetPanelActive(helpPanel, false);
+        SetPanelActive(settingsPanel, false);
 
         if (bird != null)
         {
@@ -138,6 +144,26 @@ public sealed class GameManager : MonoBehaviour
             BeginEnemySpawningAfterIntro()
         );
 
+    }
+
+    public void OpenHelpPanel()
+    {
+        SetPanelActive(helpPanel, true);
+    }
+
+    public void CloseHelpPanel()
+    {
+        SetPanelActive(helpPanel, false);
+    }
+
+    public void OpenSettingsPanel()
+    {
+        SetPanelActive(settingsPanel, true);
+    }
+
+    public void CloseHSettingsPanel()
+    {
+        SetPanelActive(settingsPanel, false);
     }
 
     public void AddScore(int amount)

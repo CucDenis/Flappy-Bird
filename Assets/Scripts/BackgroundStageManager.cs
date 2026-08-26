@@ -8,6 +8,7 @@ public sealed class BackgroundStageManager
     {
         Sea,
         Beach,
+        City,
         Hills,
         Mountains,
         LowSky,
