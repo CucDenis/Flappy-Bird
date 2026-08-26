@@ -23,6 +23,7 @@ public sealed class GameManager : MonoBehaviour
     [SerializeField] private BirdController bird;
     [SerializeField] private CrowSpawner crowSpawner;
     [SerializeField] private BackgroundStageManager backgroundStageManager;
+    [SerializeField] private MusicManager musicManager;
 
     [Header("UI Panels")]
     [SerializeField] private GameObject startPanel;
@@ -122,6 +123,11 @@ public sealed class GameManager : MonoBehaviour
             bird.BeginGame();
         }
 
+        if (musicManager != null)
+        {
+            musicManager.StartMusic();
+        }
+
         if (backgroundStageManager != null)
         {
             backgroundStageManager
@@ -162,6 +168,11 @@ public sealed class GameManager : MonoBehaviour
             bird.PauseInput();
         }
 
+        if (musicManager != null)
+        {
+            musicManager.PauseMusic();
+        }
+
         SetPanelActive(hudPanel, false);
         SetPanelActive(pausePanel, true);
 
@@ -182,6 +193,11 @@ public sealed class GameManager : MonoBehaviour
         if (bird != null)
         {
             bird.ResumeInput();
+        }
+
+        if (musicManager != null)
+        {
+            musicManager.ResumeMusic();
         }
 
         SetPanelActive(pausePanel, false);

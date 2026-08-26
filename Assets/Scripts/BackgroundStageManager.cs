@@ -16,6 +16,10 @@ public sealed class BackgroundStageManager
         DeepSpace
     }
 
+    [Header("Music")]
+    [SerializeField]
+    private MusicManager musicManager;
+
     [Header("Terrestrial")]
     [SerializeField]
     private EnvironmentHorizontalScroller
@@ -474,15 +478,15 @@ public sealed class BackgroundStageManager
     }
 
     private void SetStage(
-        StageType stage
+       StageType stage
     )
     {
         if (
-            hasActiveStage &&
-            currentStage == stage
+           hasActiveStage &&
+           currentStage == stage
         )
         {
-            return;
+           return;
         }
 
         currentStage = stage;
@@ -491,10 +495,13 @@ public sealed class BackgroundStageManager
         ConfigureClouds(stage);
 
         crowSpawner?
-            .SetStage(stage);
+        .SetStage(stage);
+
+        musicManager?
+        .OnStageChanged(stage);
 
         Debug.Log(
-            $"ENVIRONMENT STAGE -> {stage}"
+           $"ENVIRONMENT STAGE -> {stage}"
         );
     }
 

@@ -772,6 +772,7 @@ MonoBehaviour:
   bird: {fileID: 1820195498}
   crowSpawner: {fileID: 73269345}
   backgroundStageManager: {fileID: 1157359584}
+  musicManager: {fileID: 1854934060}
   startPanel: {fileID: 1162028063}
   hudPanel: {fileID: 2136551097}
   pausePanel: {fileID: 410521695}
@@ -4185,6 +4186,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 73c0b8dc443fb4a479ba17fa0314b4ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BackgroundStageManager
+  musicManager: {fileID: 1854934060}
   terrestrialScroller: {fileID: 693450611}
   terrestrialVerticalExitMover: {fileID: 693450612}
   cloudSpawner: {fileID: 1202822004}
@@ -7039,6 +7041,114 @@ Transform:
   m_Children: []
   m_Father: {fileID: 693450610}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1854934059
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1854934061}
+  - component: {fileID: 1854934060}
+  m_Layer: 0
+  m_Name: MusicManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1854934060
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1854934059}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9108794959f234cf09b8ce1922506865, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MusicManager
+  baseLayer:
+    name: Ocean
+    clip: {fileID: 8300000, guid: 01c51225cccdc4c1cae05a585f6cb09d, type: 3}
+    volume: 1
+    fadeDuration: 0
+    source: {fileID: 0}
+    currentVolume: 0
+  beachLayer:
+    name: Beach
+    clip: {fileID: 8300000, guid: cc3bd49c0b10e43eb82fe294761996c3, type: 3}
+    volume: 1
+    fadeDuration: 2
+    source: {fileID: 0}
+    currentVolume: 0
+  cityLayer:
+    name: City
+    clip: {fileID: 8300000, guid: fc539bb54cf614ac08d133cbdc7f48e8, type: 3}
+    volume: 1
+    fadeDuration: 2
+    source: {fileID: 0}
+    currentVolume: 0
+  hillsLayer:
+    name: Hills
+    clip: {fileID: 8300000, guid: 569a927ac8e7a4265adf8b46b11145c2, type: 3}
+    volume: 1
+    fadeDuration: 2
+    source: {fileID: 0}
+    currentVolume: 0
+  mountainsLayer:
+    name: Mountains
+    clip: {fileID: 8300000, guid: 9f51fd90b8b384525829b6aaa989d302, type: 3}
+    volume: 1
+    fadeDuration: 2
+    source: {fileID: 0}
+    currentVolume: 0
+  lowSkyLayer:
+    name: Low Sky
+    clip: {fileID: 8300000, guid: e213685b44bea45ed98083a9380fed8b, type: 3}
+    volume: 1
+    fadeDuration: 2
+    source: {fileID: 0}
+    currentVolume: 0
+  midSkyLayer:
+    name: Mid Sky
+    clip: {fileID: 8300000, guid: 8080e49866a7d460aaaf4d293ba24e6e, type: 3}
+    volume: 1
+    fadeDuration: 2
+    source: {fileID: 0}
+    currentVolume: 0
+  highSkyLayer:
+    name: High Sky
+    clip: {fileID: 8300000, guid: 9d5262f0a622e4c808807709370eae01, type: 3}
+    volume: 1
+    fadeDuration: 2
+    source: {fileID: 0}
+    currentVolume: 0
+  spaceLayer:
+    name: Space Layer
+    clip: {fileID: 8300000, guid: 0c048de5c8b89415baa070f78af6e9e9, type: 3}
+    volume: 1
+    fadeDuration: 2
+    source: {fileID: 0}
+    currentVolume: 0
+  masterVolume: 1
+--- !u!4 &1854934061
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1854934059}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 16.8947, y: 3.5742, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1878057872
 GameObject:
   m_ObjectHideFlags: 0
@@ -8246,3 +8356,4 @@ SceneRoots:
   - {fileID: 1922966645}
   - {fileID: 732020591}
   - {fileID: 410756070}
+  - {fileID: 1854934061}
