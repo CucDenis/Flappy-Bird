@@ -1,8 +1,10 @@
 using UnityEngine;
+using System;
 
-public class GameStorage : MonoBehaviour
+public class SaveManager : MonoBehaviour
 {
-    public static GameStorage Instance { get; private set; }
+    public static SaveManager Instance { get; private set; }
+    public static event Action OnSettingsChanged;
     private string BestScoreKey = "best_score";
     private string MusicVolumKey = "music_volume";
     private string SfxVolumeKey = "sfx_volume";
@@ -37,9 +39,10 @@ public class GameStorage : MonoBehaviour
         }
 
         Instance = this;
+        DontDestroyOnLoad(gameObject);
     } 
 
-    public void UpdateBestScore(int value)
+    public void SaveBestScore(int value)
     {
         if ( value <= BestScore)
             return;
@@ -51,9 +54,11 @@ public class GameStorage : MonoBehaviour
 
         PlayerPrefs.Save();
 
+        OnSettingsChanged?.Invoke();
+
     }
 
-    public void UpdateMusicVolume(float value)
+    public void SaveMusicVolume(float value)
     {
         PlayerPrefs.SetFloat(
             MusicVolumKey,
@@ -62,9 +67,11 @@ public class GameStorage : MonoBehaviour
 
         PlayerPrefs.Save();
 
+        OnSettingsChanged?.Invoke();
+
     }
 
-    public void UpdateSfxVolume(float value)
+    public void SaveSfxVolume(float value)
     {
         PlayerPrefs.SetFloat(
             SfxVolumeKey,
@@ -72,6 +79,8 @@ public class GameStorage : MonoBehaviour
         );
 
         PlayerPrefs.Save();
+
+        OnSettingsChanged?.Invoke();
 
     }
 }

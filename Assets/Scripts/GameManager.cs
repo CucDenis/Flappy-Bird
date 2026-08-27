@@ -23,7 +23,6 @@ public sealed class GameManager : MonoBehaviour
     [SerializeField] private BirdController bird;
     [SerializeField] private CrowSpawner crowSpawner;
     [SerializeField] private BackgroundStageManager backgroundStageManager;
-    [SerializeField] private MusicManager musicManager;
 
     [Header("UI Panels")]
     [SerializeField] private GameObject startPanel;
@@ -40,17 +39,12 @@ public sealed class GameManager : MonoBehaviour
     public GameState CurrentState { get; private set; }
     public int Score { get; private set; }
 
-    public bool IsPlaying =>
-        CurrentState == GameState.Playing;
+    public bool IsPlaying => CurrentState == GameState.Playing;
+    public bool IsPaused => CurrentState == GameState.Paused;
+    public bool HasGameEnded => CurrentState == GameState.GameOver || CurrentState == GameState.Completed;
 
-    public bool IsPaused =>
-        CurrentState == GameState.Paused;
-
-    public bool HasGameEnded =>
-        CurrentState ==
-            GameState.GameOver ||
-        CurrentState ==
-            GameState.Completed;
+    // Track the coroutine reference so we can stop it safely on clean up
+    private Coroutine introSpawnCoroutine;
 
     private void Awake()
     {
@@ -61,8 +55,6 @@ public sealed class GameManager : MonoBehaviour
         }
 
         Instance = this;
-
-        // Important when returning from a paused scene reload.
         Time.timeScale = 1f;
     }
 
@@ -75,9 +67,7 @@ public sealed class GameManager : MonoBehaviour
     {
         CurrentState = GameState.Ready;
         Score = 0;
-
         Time.timeScale = 1f;
-
         UpdateScoreUI();
 
         SetPanelActive(startPanel, true);
@@ -105,16 +95,11 @@ public sealed class GameManager : MonoBehaviour
 
     public void StartGame()
     {
-        if (CurrentState != GameState.Ready)
-        {
-            return;
-        }
+        if (CurrentState != GameState.Ready) return;
 
         CurrentState = GameState.Playing;
         Score = 0;
-
         Time.timeScale = 1f;
-
         UpdateScoreUI();
 
         SetPanelActive(startPanel, false);
@@ -124,79 +109,46 @@ public sealed class GameManager : MonoBehaviour
         SetPanelActive(helpPanel, false);
         SetPanelActive(settingsPanel, false);
 
-        if (bird != null)
-        {
-            bird.BeginGame();
-        }
+        if (bird != null) bird.BeginGame();
 
-        if (musicManager != null)
+        if (AudioManager.Instance != null)
         {
-            musicManager.StartMusic();
+            AudioManager.Instance.StartMusic();
         }
 
         if (backgroundStageManager != null)
         {
-            backgroundStageManager
-                .BeginProgression();
+            backgroundStageManager.BeginProgression();
         }
 
-        StartCoroutine(
-            BeginEnemySpawningAfterIntro()
-        );
-
+        // Store reference to clean it up safely later
+        introSpawnCoroutine = StartCoroutine(BeginEnemySpawningAfterIntro());
     }
 
-    public void OpenHelpPanel()
-    {
-        SetPanelActive(helpPanel, true);
-    }
-
-    public void CloseHelpPanel()
-    {
-        SetPanelActive(helpPanel, false);
-    }
-
-    public void OpenSettingsPanel()
-    {
-        SetPanelActive(settingsPanel, true);
-    }
-
-    public void CloseHSettingsPanel()
-    {
-        SetPanelActive(settingsPanel, false);
-    }
+    public void OpenHelpPanel() => SetPanelActive(helpPanel, true);
+    public void CloseHelpPanel() => SetPanelActive(helpPanel, false);
+    public void OpenSettingsPanel() => SetPanelActive(settingsPanel, true);
+    public void CloseHSettingsPanel() => SetPanelActive(settingsPanel, false);
 
     public void AddScore(int amount)
     {
-        if (CurrentState != GameState.Playing)
-        {
-            return;
-        }
+        if (CurrentState != GameState.Playing) return;
 
         Score += amount;
-
         UpdateScoreUI();
-        
     }
 
     public void PauseGame()
     {
-        if (!IsPlaying)
-        {
-            return;
-        }
+        if (!IsPlaying) return;
 
         CurrentState = GameState.Paused;
 
-        // Disable the Gameplay/Flap action before freezing time.
-        if (bird != null)
-        {
-            bird.PauseInput();
-        }
+        if (bird != null) bird.PauseInput();
 
-        if (musicManager != null)
+        if (AudioManager.Instance != null)
         {
-            musicManager.PauseMusic();
+            AudioManager.Instance.PauseMusic();
         }
 
         SetPanelActive(hudPanel, false);
@@ -207,23 +159,16 @@ public sealed class GameManager : MonoBehaviour
 
     public void ResumeGame()
     {
-        if (!IsPaused)
-        {
-            return;
-        }
+        if (!IsPaused) return;
 
-        // Restore gameplay time before accepting input.
         Time.timeScale = 1f;
         CurrentState = GameState.Playing;
 
-        if (bird != null)
-        {
-            bird.ResumeInput();
-        }
+        if (bird != null) bird.ResumeInput();
 
-        if (musicManager != null)
+        if (AudioManager.Instance != null)
         {
-            musicManager.ResumeMusic();
+            AudioManager.Instance.ResumeMusic();
         }
 
         SetPanelActive(pausePanel, false);
@@ -232,36 +177,31 @@ public sealed class GameManager : MonoBehaviour
 
     public void GameOver()
     {
-        if (!IsPlaying)
-        {
-            return;
-        }
+        if (!IsPlaying) return;
 
         CurrentState = GameState.GameOver;
 
-        if (backgroundStageManager != null)
-        {
-            backgroundStageManager
-                .StopProgression();
-        }
+        // Clean up active coroutines to prevent background spawn leak issues
+        if (introSpawnCoroutine != null) StopCoroutine(introSpawnCoroutine);
 
-        if (crowSpawner != null)
-        {
-            crowSpawner.StopSpawning();
-        }
-
-        if (bird != null)
-        {
-            bird.StopBird();
-        }
+        if (backgroundStageManager != null) backgroundStageManager.StopProgression();
+        if (crowSpawner != null) crowSpawner.StopSpawning();
+        if (bird != null) bird.StopBird();
 
         SetPanelActive(hudPanel, false);
         SetPanelActive(pausePanel, false);
         SetPanelActive(gameOverPanel, true);
 
-        if (finalScoreText != null)
+        if (finalScoreText != null) finalScoreText.text = $"Score: {Score}";
+
+        if (SaveManager.Instance != null)
         {
-            finalScoreText.text = $"Score: {Score}";
+            SaveManager.Instance.SaveBestScore(Score);
+        }
+
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.StopMusic();
         }
 
         Time.timeScale = 0f;
@@ -269,11 +209,8 @@ public sealed class GameManager : MonoBehaviour
 
     public void RetryGame()
     {
-        // Always restore normal time before loading the scene.
         Time.timeScale = 1f;
-
         Scene currentScene = SceneManager.GetActiveScene();
-
         SceneManager.LoadScene(currentScene.buildIndex);
     }
 
@@ -287,84 +224,47 @@ public sealed class GameManager : MonoBehaviour
 
     public void CompleteGame()
     {
-        if (
-            CurrentState !=
-            GameState.Playing
-        )
-        {
-            return;
-        }
+        if (CurrentState != GameState.Playing) return;
 
         CurrentState = GameState.Completed;
 
-        if (backgroundStageManager != null)
-        {
-            backgroundStageManager
-                .StopProgression();
-        }
+        // Clean up active coroutines
+        if (introSpawnCoroutine != null) StopCoroutine(introSpawnCoroutine);
 
-        if (crowSpawner != null)
-        {
-            crowSpawner.StopSpawning();
-        }
+        if (backgroundStageManager != null) backgroundStageManager.StopProgression();
+        if (crowSpawner != null) crowSpawner.StopSpawning();
+        if (bird != null) bird.StopBird();
 
-        if (bird != null)
-        {
-            bird.StopBird();
-        }
-
-        SetPanelActive(
-            hudPanel,
-            false
-        );
-
-        SetPanelActive(
-            pausePanel,
-            false
-        );
-
-        SetPanelActive(
-            gameOverPanel,
-            true
-        );
+        SetPanelActive(hudPanel, false);
+        SetPanelActive(pausePanel, false);
+        SetPanelActive(gameOverPanel, true);
 
         if (finalScoreText != null)
         {
-            finalScoreText.text =
-                $"FLIGHT COMPLETE\nScore: {Score}";
+            finalScoreText.text = $"FLIGHT COMPLETE\nScore: {Score}";
         }
 
-        Debug.Log(
-            $"GAME COMPLETED AT SCORE {Score}"
-        );
+        // FIX 1: Make sure the score persists when the user wins the game!
+        if (SaveManager.Instance != null)
+        {
+            SaveManager.Instance.SaveBestScore(Score);
+        }
 
         Time.timeScale = 0f;
     }
 
     private void OnApplicationPause(bool applicationPaused)
     {
-        if (applicationPaused && IsPlaying)
-        {
-            PauseGame();
-        }
+        if (applicationPaused && IsPlaying) PauseGame();
     }
 
     private void OnApplicationFocus(bool hasFocus)
     {
-        if (!hasFocus && IsPlaying)
-        {
-            PauseGame();
-        }
+        if (!hasFocus && IsPlaying) PauseGame();
     }
 
-    private static void SetPanelActive(
-        GameObject panel,
-        bool active
-    )
+    private static void SetPanelActive(GameObject panel, bool active)
     {
-        if (panel != null)
-        {
-            panel.SetActive(active);
-        }
+        if (panel != null) panel.SetActive(active);
     }
 }
