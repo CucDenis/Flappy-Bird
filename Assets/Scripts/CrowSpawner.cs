@@ -200,6 +200,23 @@ public sealed class CrowSpawner : MonoBehaviour
         );
     }
 
+    private float GetRandomVerticalSpacing()
+    {
+        float minimum =
+            Mathf.Max(
+                0.5f,
+                currentTier.minimumVerticalSpacing
+            );
+
+        float maximum =
+            minimum * 1.5f;
+
+        return UnityEngine.Random.Range(
+            minimum,
+            maximum
+        );
+    }
+
     private IEnumerator SpawnLoop()
     {
         yield return
@@ -549,153 +566,156 @@ public sealed class CrowSpawner : MonoBehaviour
         bool allowBurst
     )
     {
-        float upperY =
-            Mathf.Lerp(
-                0f,
-                maximumSpawnY,
-                0.75f
-            );
 
-        float lowerY =
-            Mathf.Lerp(
-                0f,
-                minimumSpawnY,
-                0.75f
-            );
-
-        float middleUpperY =
-            Mathf.Lerp(
-                0f,
-                maximumSpawnY,
-                0.4f
-            );
-
-        float middleLowerY =
-            Mathf.Lerp(
-                0f,
-                minimumSpawnY,
-                0.4f
-            );
-
-        float spacing =
-            Mathf.Max(
-                1.2f,
-                currentTier.horizontalSpacing
-            );
+        float spacing = Mathf.Max(
+            1.2f,
+            currentTier.horizontalSpacing
+        );
 
         switch (formation)
         {
             case TechnicalFormation.HighLow:
+            {
+                float verticalSpacing = GetRandomVerticalSpacing();
+
+                float centerY = UnityEngine.Random.Range(
+                    minimumSpawnY + verticalSpacing / 2f,
+                    maximumSpawnY - verticalSpacing / 2f
+                );
+
                 SpawnCrow(
                     spawnX,
-                    upperY,
+                    centerY + verticalSpacing / 2f,
                     speed,
                     allowBurst
                 );
 
                 SpawnCrow(
                     spawnX + spacing,
-                    lowerY,
+                    centerY - verticalSpacing / 2f,
                     speed,
                     allowBurst
                 );
+
                 break;
+            }
 
             case TechnicalFormation.LowHigh:
+            {
+                float verticalSpacing = GetRandomVerticalSpacing();
+
+                float centerY = UnityEngine.Random.Range(
+                    minimumSpawnY + verticalSpacing / 2f,
+                    maximumSpawnY - verticalSpacing / 2f
+                );
+
                 SpawnCrow(
                     spawnX,
-                    lowerY,
+                    centerY - verticalSpacing / 2f,
                     speed,
                     allowBurst
                 );
 
                 SpawnCrow(
                     spawnX + spacing,
-                    upperY,
+                    centerY + verticalSpacing / 2f,
                     speed,
                     allowBurst
                 );
+
                 break;
+            }
 
             case TechnicalFormation.WideGate:
+            {
                 SpawnCrow(
                     spawnX,
-                    upperY,
-                    speed,
-                    allowBurst
-                );
-
-                SpawnCrow(
-                    spawnX,
-                    lowerY,
-                    speed,
-                    allowBurst
-                );
-                break;
-
-            case TechnicalFormation.OffsetPair:
-                SpawnCrow(
-                    spawnX,
-                    middleUpperY,
+                    maximumSpawnY,
                     speed,
                     allowBurst
                 );
 
                 SpawnCrow(
                     spawnX + spacing,
-                    middleLowerY,
+                    minimumSpawnY,
                     speed,
                     allowBurst
                 );
+
                 break;
+            }
 
             case TechnicalFormation.RisingSteps:
+            {
+                float spacing1 = GetRandomVerticalSpacing();
+                float spacing2 = GetRandomVerticalSpacing();
+
+                float totalHeight = spacing1 + spacing2;
+
+                float startY = UnityEngine.Random.Range(
+                    minimumSpawnY + totalHeight,
+                    maximumSpawnY
+                );
+
                 SpawnCrow(
                     spawnX,
-                    lowerY,
+                    startY,
                     speed,
                     allowBurst
                 );
 
                 SpawnCrow(
                     spawnX + spacing,
-                    middleLowerY,
+                    startY - spacing1,
                     speed,
                     allowBurst
                 );
 
                 SpawnCrow(
-                    spawnX +
-                    spacing * 2f,
-                    middleUpperY,
+                    spawnX + spacing * 2f,
+                    startY - totalHeight,
                     speed,
                     allowBurst
                 );
+
                 break;
+            }
 
             case TechnicalFormation.FallingSteps:
+            {
+                float spacing1 = GetRandomVerticalSpacing();
+                float spacing2 = GetRandomVerticalSpacing();
+
+                float totalHeight = spacing1 + spacing2;
+
+                float startY = UnityEngine.Random.Range(
+                    minimumSpawnY,
+                    maximumSpawnY - totalHeight
+                );
+
                 SpawnCrow(
                     spawnX,
-                    upperY,
+                    startY,
                     speed,
                     allowBurst
                 );
 
                 SpawnCrow(
                     spawnX + spacing,
-                    middleUpperY,
+                    startY + spacing1,
                     speed,
                     allowBurst
                 );
 
                 SpawnCrow(
-                    spawnX +
-                    spacing * 2f,
-                    middleLowerY,
+                    spawnX + spacing * 2f,
+                    startY + totalHeight,
                     speed,
                     allowBurst
                 );
+
                 break;
+            }
         }
     }
 

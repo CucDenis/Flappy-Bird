@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using System;
+using System.Collections;
 
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(Animator))]
@@ -117,8 +119,113 @@ public sealed class BirdController : MonoBehaviour
     private float hoverTimer;
     private float diveTargetY;
     private float recoveryTimer;
+
+    [Header("Lifes")]
+    public const int MaxLives = 3;
+    private int currentLives;
+    public int CurrentLives => currentLives;
+    [SerializeField] 
+    private float hitInvulnerabilityDuration = 1f;
+    [SerializeField]
+    private float flashInterval = 0.1f;
+    private bool isInvulnerable;
+    public event Action<int> LivesChanged;
     public bool IsStartTransitionActive =>
     startTransitionActive;
+    private SpriteRenderer spriteRenderer;
+    private Coroutine invulnerabilityCoroutine;
+
+    private void HitTake()
+    {
+        if (currentLives <= 0 || isInvulnerable)
+        {
+            return;
+        }
+
+        currentLives--;
+
+        LivesChanged?.Invoke(currentLives);
+
+        if (currentLives > 0)
+        {
+
+            StartInvulnerability();
+            return;
+        }
+
+        GameManager.Instance?.HandleBirdOutOfLives(); 
+
+    }
+
+    public void AddLife()
+    {
+        if (currentLives >= MaxLives)
+        {
+            return;
+        }
+
+        currentLives++;
+
+        LivesChanged?.Invoke(currentLives);
+
+        StartInvulnerability();
+    }
+
+    public void ResumeAfterRevive()
+    {
+        gameplayInputEnabled = true;
+        body.simulated = true;
+
+        SetVelocity(Vector2.zero);
+
+        currentState = FlightState.Hovering;
+
+        EnableInputActions();
+    }
+
+    private IEnumerator HitInvulnerability()
+    {
+        isInvulnerable = true;
+
+        float elapsed = 0f;
+
+        while (elapsed < hitInvulnerabilityDuration)
+        {
+            SetBirdVisible(false);
+
+            yield return new WaitForSecondsRealtime(flashInterval);
+
+            SetBirdVisible(true);
+
+            yield return new WaitForSecondsRealtime(flashInterval);
+
+            elapsed += flashInterval * 2f;
+        }
+
+        SetBirdVisible(true);
+
+        isInvulnerable = false;
+        invulnerabilityCoroutine = null;
+    }
+
+    private void StartInvulnerability()
+    {
+        if (invulnerabilityCoroutine != null)
+        {
+            StopCoroutine(invulnerabilityCoroutine);
+        }
+
+        invulnerabilityCoroutine =
+            StartCoroutine(HitInvulnerability());
+    }
+
+    private void SetBirdVisible(bool visible)
+    {
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.enabled = visible;
+        }
+    }
     
     public void BeginStartTransition()
     {
@@ -161,14 +268,24 @@ public sealed class BirdController : MonoBehaviour
 
     private void Awake()
     {
+
         body = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
+
+        currentLives = MaxLives;
 
         body.gravityScale = 0f;
         body.simulated = false;
 
         animator.SetFloat(FlightSpeedId, hoverAnimationSpeed);
         animator.SetBool(IsDivingId, false);
+    }
+
+    private void ResetLifes()
+    {
+        currentLives = MaxLives;
+        LivesChanged?.Invoke(currentLives);
     }
 
     private void OnEnable()
@@ -224,6 +341,8 @@ public sealed class BirdController : MonoBehaviour
 
     public void BeginGame()
     {
+        ResetLifes();
+
         gameplayInputEnabled = true;
         body.simulated = true;
 
@@ -690,6 +809,8 @@ public sealed class BirdController : MonoBehaviour
         return uiResults.Count > 0;
     }
 
+
+
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (!gameplayInputEnabled)
@@ -701,9 +822,8 @@ public sealed class BirdController : MonoBehaviour
             other.CompareTag("Enemy") ||
             other.CompareTag("Boundary")
         )
-        {
-            GameManager.Instance?.GameOver();
-        }
+            HitTake();
+
     }
 
     private Vector2 GetVelocity()

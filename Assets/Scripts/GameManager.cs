@@ -1,5 +1,6 @@
 using System.Collections;
 using TMPro;
+using Unity.AppUI.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -12,6 +13,7 @@ public sealed class GameManager : MonoBehaviour
         Ready,
         Playing,
         Paused,
+        WaitingForRevive,
         GameOver,
         Completed
     }
@@ -31,6 +33,7 @@ public sealed class GameManager : MonoBehaviour
     [SerializeField] private GameObject gameOverPanel;
     [SerializeField] private GameObject helpPanel;
     [SerializeField] private GameObject settingsPanel;
+    [SerializeField] private GameObject watchAdButton;
 
     [Header("Score UI")]
     [SerializeField] private TMP_Text scoreText;
@@ -42,9 +45,13 @@ public sealed class GameManager : MonoBehaviour
     public bool IsPlaying => CurrentState == GameState.Playing;
     public bool IsPaused => CurrentState == GameState.Paused;
     public bool HasGameEnded => CurrentState == GameState.GameOver || CurrentState == GameState.Completed;
+    public bool IsWaitingForRevive =>
+    CurrentState == GameState.WaitingForRevive;
 
     // Track the coroutine reference so we can stop it safely on clean up
     private Coroutine introSpawnCoroutine;
+    private const int MaxRevivesPerRun = 3;
+    private int revivesUsed;
 
     private void Awake()
     {
@@ -95,6 +102,8 @@ public sealed class GameManager : MonoBehaviour
 
     public void StartGame()
     {
+        revivesUsed = 0;
+
         if (CurrentState != GameState.Ready) return;
 
         CurrentState = GameState.Playing;
@@ -130,13 +139,112 @@ public sealed class GameManager : MonoBehaviour
     public void OpenSettingsPanel() => SetPanelActive(settingsPanel, true);
     public void CloseHSettingsPanel() => SetPanelActive(settingsPanel, false);
 
-    public void AddScore(int amount)
+    public void HandleBirdOutOfLives()
     {
-        if (CurrentState != GameState.Playing) return;
+        if (!IsPlaying)
+        {
+            return;
+        }
 
-        Score += amount;
-        UpdateScoreUI();
+        if (revivesUsed < MaxRevivesPerRun)
+        {
+            ShowReviveOpportunity();
+            return;
+        }
+
+        GameOver();
     }
+
+    private void UpdateAdWatchButton()
+    {
+        if ( watchAdButton != null )
+        {
+            bool canRevive = revivesUsed < MaxRevivesPerRun;
+
+            watchAdButton.SetActive(canRevive);
+        }
+    }
+
+    private void SetCurrentRunScore()
+    {
+        if (finalScoreText != null) finalScoreText.text = $"Score: {Score}";
+    }
+
+    private void ShowReviveOpportunity()
+    {
+        CurrentState = GameState.WaitingForRevive;
+
+        if (backgroundStageManager != null)
+        {
+            backgroundStageManager.StopProgression();
+        }
+
+        if (crowSpawner != null)
+        {
+            crowSpawner.StopSpawning();
+        }
+
+        if (bird != null)
+        {
+            bird.StopBird();
+        }
+
+        SetPanelActive(hudPanel, false);
+        SetPanelActive(pausePanel, false);
+        SetPanelActive(gameOverPanel, true);
+
+        SetCurrentRunScore();
+
+        UpdateAdWatchButton();
+
+        Time.timeScale = 0f;
+    }
+
+    public void ReviveAfterRewardedAd()
+    {
+        if (CurrentState != GameState.WaitingForRevive)
+        {
+            return;
+        }
+
+        if (revivesUsed >= MaxRevivesPerRun)
+        {
+            return;
+        }
+
+        revivesUsed++;
+
+        if (bird != null)
+        {
+            bird.AddLife();
+            bird.ResumeAfterRevive();
+        }
+
+        CurrentState = GameState.Playing;
+
+        Time.timeScale = 1f;
+
+        if (backgroundStageManager != null)
+        {
+            backgroundStageManager.BeginProgression();
+        }
+
+        if (crowSpawner != null)
+        {
+            crowSpawner.BeginSpawning();
+        }
+
+        SetPanelActive(gameOverPanel, false);
+        SetPanelActive(hudPanel, true);
+    }
+
+        public void AddScore(int amount)
+        {
+            if (CurrentState != GameState.Playing) return;
+
+            Score += amount;
+            UpdateScoreUI();
+        }
 
     public void PauseGame()
     {
@@ -192,7 +300,9 @@ public sealed class GameManager : MonoBehaviour
         SetPanelActive(pausePanel, false);
         SetPanelActive(gameOverPanel, true);
 
-        if (finalScoreText != null) finalScoreText.text = $"Score: {Score}";
+        UpdateAdWatchButton();
+
+        SetCurrentRunScore();
 
         if (SaveManager.Instance != null)
         {
