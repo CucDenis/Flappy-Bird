@@ -33,6 +33,8 @@ public sealed class GameManager : MonoBehaviour
     [SerializeField] private GameObject helpPanel;
     [SerializeField] private GameObject settingsPanel;
     [SerializeField] private GameObject watchAdButton;
+    [SerializeField] private GameObject storePanle;
+    [SerializeField] private GameObject exitConfirmationModal;
 
     [Header("Score UI")]
     [SerializeField] private TMP_Text scoreText;
@@ -51,6 +53,7 @@ public sealed class GameManager : MonoBehaviour
     private Coroutine introSpawnCoroutine;
     private const int MaxRevivesPerRun = 3;
     private int revivesUsed;
+    private bool exitConfirmed;
 
     private void Awake()
     {
@@ -82,6 +85,8 @@ public sealed class GameManager : MonoBehaviour
         SetPanelActive(gameOverPanel, false);
         SetPanelActive(helpPanel, false);
         SetPanelActive(settingsPanel, false);
+        SetPanelActive(storePanle, false);
+        SetPanelActive(exitConfirmationModal, false);
     }
 
     private IEnumerator BeginEnemySpawningAfterIntro()
@@ -116,6 +121,8 @@ public sealed class GameManager : MonoBehaviour
         SetPanelActive(gameOverPanel, false);
         SetPanelActive(helpPanel, false);
         SetPanelActive(settingsPanel, false);
+        SetPanelActive(storePanle, false);
+        SetPanelActive(exitConfirmationModal, false);
 
         if (bird != null) bird.BeginGame();
 
@@ -137,6 +144,38 @@ public sealed class GameManager : MonoBehaviour
     public void CloseHelpPanel() => SetPanelActive(helpPanel, false);
     public void OpenSettingsPanel() => SetPanelActive(settingsPanel, true);
     public void CloseHSettingsPanel() => SetPanelActive(settingsPanel, false);
+
+    public void OpenStorePanel() 
+    { 
+        SetPanelActive(storePanle, true);
+        SetPanelActive(startPanel, false);
+    }
+    public void CloseStorePanel() 
+    {
+        SetPanelActive(startPanel, true);
+        SetPanelActive(storePanle, false);
+    }
+
+    public void ExitConfirmedYes()
+    {
+        // If running inside the Unity Editor, stop play mode
+        #if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+        #else
+        // If running as a built standalone game, close the application
+            Application.Quit();
+        #endif
+    }
+
+    public void ExitConfirmedNo()
+    {
+        SetPanelActive(exitConfirmationModal, false);
+    }
+
+    public void ExitGame()
+    {
+        SetPanelActive(exitConfirmationModal, true);
+    }
 
     public void HandleBirdOutOfLives()
     {
