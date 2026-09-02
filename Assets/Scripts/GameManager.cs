@@ -38,6 +38,7 @@ public sealed class GameManager : MonoBehaviour
 
     [Header("Managers")]
     [SerializeField] private StoreManager storeManager;
+    [SerializeField] private EconomyManager economyManager;
 
     [Header("Score UI")]
     [SerializeField] private TMP_Text scoreText;
@@ -157,7 +158,7 @@ public sealed class GameManager : MonoBehaviour
         SetPanelActive(storePanle, true);
         SetPanelActive(startPanel, false);
     }
-    
+
     public void CloseStorePanel() 
     {
         SetPanelActive(startPanel, true);
@@ -354,9 +355,7 @@ public sealed class GameManager : MonoBehaviour
         {
             SaveManager.Instance.SaveBestScore(Score);
             
-            int newTotalScoreAmount = SaveManager.Instance.TotalScoreAmount + Score;
-
-            SaveManager.Instance.SetTotalScoreAmount(newTotalScoreAmount);
+            economyManager.AddScore(Score);
         }
 
         if (AudioManager.Instance != null)
@@ -408,10 +407,7 @@ public sealed class GameManager : MonoBehaviour
         {
             SaveManager.Instance.SaveBestScore(Score);
 
-            int newTotalScoreAmount =
-                SaveManager.Instance.TotalScoreAmount + Score;
-
-            SaveManager.Instance.SetTotalScoreAmount(newTotalScoreAmount);
+            economyManager.AddScore(Score);
         }
 
         Time.timeScale = 0f;
