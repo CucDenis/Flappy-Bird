@@ -109,6 +109,19 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
@@ -118,8 +131,8 @@ TextureImporter:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 360
-        height: 160
+        width: 359
+        height: 152
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -138,10 +151,10 @@ TextureImporter:
       name: sea_1
       rect:
         serializedVersion: 2
-        x: 360
+        x: 359
         y: 0
-        width: 360
-        height: 160
+        width: 359
+        height: 152
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -160,10 +173,10 @@ TextureImporter:
       name: sea_2
       rect:
         serializedVersion: 2
-        x: 720
+        x: 718
         y: 0
-        width: 360
-        height: 160
+        width: 359
+        height: 152
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -182,10 +195,10 @@ TextureImporter:
       name: sea_3
       rect:
         serializedVersion: 2
-        x: 1080
+        x: 1077
         y: 0
-        width: 360
-        height: 160
+        width: 359
+        height: 152
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -204,10 +217,10 @@ TextureImporter:
       name: sea_4
       rect:
         serializedVersion: 2
-        x: 1440
+        x: 1436
         y: 0
-        width: 360
-        height: 160
+        width: 359
+        height: 152
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -226,10 +239,10 @@ TextureImporter:
       name: sea_5
       rect:
         serializedVersion: 2
-        x: 1800
+        x: 1795
         y: 0
-        width: 360
-        height: 160
+        width: 359
+        height: 152
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -240,6 +253,28 @@ TextureImporter:
       bones: []
       spriteID: e00255b9fb2f448a584b4b0b84d9a82f
       internalID: -1928329992
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: sea_6
+      rect:
+        serializedVersion: 2
+        x: 2154
+        y: 0
+        width: 359
+        height: 152
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 183bab36fbec14b0689ead3614963b86
+      internalID: 179402845
       vertices: []
       indices: 
       edges: []
@@ -258,7 +293,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries:
       - key: SpriteEditor.SliceSettings
-        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":360.0,"y":160.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":1,"keepEmptyRects":false,"isAlternate":false}'
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":7.0,"y":1.0},"gridSpriteSize":{"x":359.0,"y":152.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":2,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
       sea_0: 697817598604000450
       sea_1: -744629589
@@ -266,6 +301,7 @@ TextureImporter:
       sea_3: 1674984803
       sea_4: 105790453
       sea_5: -1928329992
+      sea_6: 179402845
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

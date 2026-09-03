@@ -36,6 +36,10 @@ public sealed class GameManager : MonoBehaviour
     [SerializeField] private GameObject storePanle;
     [SerializeField] private GameObject exitConfirmationModal;
 
+    [Header("Managers")]
+    [SerializeField] private StoreManager storeManager;
+    [SerializeField] private EconomyManager economyManager;
+
     [Header("Score UI")]
     [SerializeField] private TMP_Text scoreText;
     [SerializeField] private TMP_Text finalScoreText;
@@ -53,7 +57,6 @@ public sealed class GameManager : MonoBehaviour
     private Coroutine introSpawnCoroutine;
     private const int MaxRevivesPerRun = 3;
     private int revivesUsed;
-    private bool exitConfirmed;
 
     private void Awake()
     {
@@ -145,11 +148,17 @@ public sealed class GameManager : MonoBehaviour
     public void OpenSettingsPanel() => SetPanelActive(settingsPanel, true);
     public void CloseHSettingsPanel() => SetPanelActive(settingsPanel, false);
 
-    public void OpenStorePanel() 
-    { 
+    public void OpenStorePanel()
+    {
+        if (storeManager != null)
+        {
+            storeManager.Refresh();
+        }
+
         SetPanelActive(storePanle, true);
         SetPanelActive(startPanel, false);
     }
+
     public void CloseStorePanel() 
     {
         SetPanelActive(startPanel, true);
@@ -345,6 +354,8 @@ public sealed class GameManager : MonoBehaviour
         if (SaveManager.Instance != null)
         {
             SaveManager.Instance.SaveBestScore(Score);
+            
+            economyManager.AddScore(Score);
         }
 
         if (AudioManager.Instance != null)
@@ -392,10 +403,11 @@ public sealed class GameManager : MonoBehaviour
             finalScoreText.text = $"FLIGHT COMPLETE\nScore: {Score}";
         }
 
-        // FIX 1: Make sure the score persists when the user wins the game!
         if (SaveManager.Instance != null)
         {
             SaveManager.Instance.SaveBestScore(Score);
+
+            economyManager.AddScore(Score);
         }
 
         Time.timeScale = 0f;
